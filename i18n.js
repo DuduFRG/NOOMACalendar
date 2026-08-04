@@ -490,6 +490,11 @@ const WIZARD_STEPS_ALL={
       {icon:'rocket',title:'Aparece no Calend\u00E1rio',desc:'Quando um projeto \u00E9 entregue ou conclu\u00EDdo, ele entra automaticamente no seu calend\u00E1rio.'},
       {icon:'package',title:'Exporte relat\u00F3rios',desc:'Gere um relat\u00F3rio em Excel, PDF ou Word com os projetos que voc\u00EA escolher.'},
     ]}]},
+    {icon:'\u2705',title:'Como funcionam as Tarefas',sub:'Sua lista do dia a dia, simples e sempre \u00E0 m\u00E3o.',fields:[{type:'feature_list',items:[
+      {icon:'check-circle',title:'Crie uma tarefa em segundos',desc:'S\u00F3 o nome j\u00E1 basta: adicione checklist, descri\u00E7\u00E3o, prioridade e data se quiser.'},
+      {icon:'flag',title:'Marque prioridade e prazo',desc:'Organize o que \u00E9 mais urgente e o que tem data pra acontecer.'},
+      {icon:'refresh-cw',title:'Ela fica at\u00E9 voc\u00EA concluir',desc:'N\u00E3o terminou no dia? Sem problema: a tarefa continua ali at\u00E9 voc\u00EA marcar como feita.'},
+    ]}]},
     {icon:'\uD83C\uDFE2',title:'Sozinho ou em equipe?',sub:'Comece no seu espa\u00E7o pessoal, ou traga a ag\u00EAncia inteira quando fizer sentido.',fields:[{type:'feature_list',items:[
       {icon:'user',title:'Voc\u00EA come\u00E7a no Workspace Pessoal',desc:'\u00C9 o seu espa\u00E7o individual, pronto pra usar sozinho, sem precisar configurar nada.'},
       {icon:'building',title:'Crie um Workspace de Equipe quando quiser',desc:'Trabalha numa ag\u00EAncia ou empresa? Crie um workspace compartilhado e convide todo mundo pra colaborar nos mesmos clientes e projetos.'},
@@ -513,6 +518,11 @@ const WIZARD_STEPS_ALL={
       {icon:'rocket',title:'Shows up on the Calendar',desc:'When a project is delivered or completed, it\u2019s automatically added to your calendar.'},
       {icon:'package',title:'Export reports',desc:'Generate an Excel, PDF or Word report with whichever projects you choose.'},
     ]}]},
+    {icon:'\u2705',title:'How Tasks works',sub:'Your day-to-day list, simple and always within reach.',fields:[{type:'feature_list',items:[
+      {icon:'check-circle',title:'Create a task in seconds',desc:'The name alone is enough: add a checklist, description, priority and date if you want.'},
+      {icon:'flag',title:'Set priority and due date',desc:'Organize what\u2019s most urgent and what has a deadline.'},
+      {icon:'refresh-cw',title:'It stays until you finish it',desc:'Didn\u2019t finish it today? No problem: the task stays there until you mark it as done.'},
+    ]}]},
     {icon:'\uD83C\uDFE2',title:'Solo or as a team?',sub:'Start in your personal space, or bring your whole agency in when it makes sense.',fields:[{type:'feature_list',items:[
       {icon:'user',title:'You start in your Personal Workspace',desc:'That\u2019s your own individual space, ready to use solo, no setup needed.'},
       {icon:'building',title:'Create a Team Workspace whenever you want',desc:'Work at an agency or company? Create a shared workspace and invite everyone to collaborate on the same clients and projects.'},
@@ -535,6 +545,11 @@ const WIZARD_STEPS_ALL={
       {icon:'refresh-cw',title:'Avanza el status',desc:'Desde el primer contacto hasta completado: crea tus propias etapas si quieres.'},
       {icon:'rocket',title:'Aparece en el Calendario',desc:'Cuando un proyecto es entregado o completado, se anade automaticamente a tu calendario.'},
       {icon:'package',title:'Exporta informes',desc:'Genera un informe en Excel, PDF o Word con los proyectos que elijas.'},
+    ]}]},
+    {icon:'\u2705',title:'C\u00F3mo funcionan las Tareas',sub:'Tu lista del d\u00EDa a d\u00EDa, simple y siempre a mano.',fields:[{type:'feature_list',items:[
+      {icon:'check-circle',title:'Crea una tarea en segundos',desc:'Solo el nombre ya es suficiente: agrega checklist, descripci\u00F3n, prioridad y fecha si quieres.'},
+      {icon:'flag',title:'Marca prioridad y plazo',desc:'Organiza lo que es m\u00E1s urgente y lo que tiene una fecha para suceder.'},
+      {icon:'refresh-cw',title:'Se queda hasta que la completes',desc:'\u00BFNo la terminaste hoy? No hay problema: la tarea sigue ah\u00ED hasta que la marques como hecha.'},
     ]}]},
     {icon:'\uD83C\uDFE2',title:'\u00BFSolo o en equipo?',sub:'Empieza en tu espacio personal, o trae a toda tu agencia cuando tenga sentido.',fields:[{type:'feature_list',items:[
       {icon:'user',title:'Empiezas en tu Workspace Personal',desc:'Es tu espacio individual, listo para usar solo, sin necesidad de configurar nada.'},
