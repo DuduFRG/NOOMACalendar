@@ -2,259 +2,75 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8"/>
+  <script>
+    // Aplicar o tema o mais cedo possivel (antes do CSS renderizar) para
+    // evitar o "flash" de tema errado. Padrao: escuro.
+    (function(){
+      try{
+        var pref=localStorage.getItem('nooma_theme')||'dark';
+        var resolved=pref;
+        if(pref==='system'){
+          resolved=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches)?'light':'dark';
+        }
+        if(resolved==='light'){
+          document.documentElement.setAttribute('data-theme','light');
+          document.addEventListener('DOMContentLoaded',function(){
+            var m=document.querySelector('meta[name="theme-color"]');
+            if(m)m.setAttribute('content','#f6f6f4');
+          });
+        }
+      }catch(e){}
+    })();
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
   <title>NOOMA Calendar</title>
-  <meta name="description" content="Calendário de postagens — Agência NOOMA"/>
+  <meta name="description" content="Calendario de postagens para social media - Agencia NOOMA"/>
+
+  <!-- Open Graph / redes sociais (WhatsApp, Instagram, Facebook, etc) -->
+  <meta property="og:type" content="website"/>
+  <meta property="og:title" content="NOOMA Calendar"/>
+  <meta property="og:description" content="Calendario de postagens para social media - Agencia NOOMA"/>
+  <meta property="og:image" content="https://noomacalendar.pages.dev/og-image.png"/>
+  <meta property="og:image:width" content="1200"/>
+  <meta property="og:image:height" content="630"/>
+  <meta property="og:url" content="https://noomacalendar.pages.dev/"/>
+  <meta property="og:site_name" content="NOOMA Calendar"/>
+  <meta property="og:locale" content="pt_BR"/>
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image"/>
+  <meta name="twitter:title" content="NOOMA Calendar"/>
+  <meta name="twitter:description" content="Calendario de postagens para social media - Agencia NOOMA"/>
+  <meta name="twitter:image" content="https://noomacalendar.pages.dev/og-image.png"/>
+
   <meta name="theme-color" content="#0d0d0d"/>
-  <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="NOOMA Cal"/>
+  <link rel="manifest" href="manifest.json"/>
+  <meta name="description" content="Calendário de postagens para social media - Agência NOOMA"/>
+  <meta name="theme-color" content="#0d0d0d"/>
+  <link rel="icon" type="image/png" href="logo-icon-lg.png"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
-  <style>
-    :root{--accent:#edf252;--accent-low:rgba(237,242,82,0.12);--accent-mid:rgba(237,242,82,0.22);--accent-text:#0d0d0d;--bg:#0d0d0d;--bg2:#141414;--bg3:#1e1e1e;--glass:rgba(255,255,255,0.045);--glass-h:rgba(255,255,255,0.075);--border:rgba(255,255,255,0.09);--border-h:rgba(255,255,255,0.18);--text:#ffffff;--muted:rgba(255,255,255,0.5);--dim:rgba(255,255,255,0.22);--danger:#ff4d4d;--r:14px;--rs:8px;--shadow:0 12px 48px rgba(0,0,0,0.7);--trans:all 0.2s cubic-bezier(0.4,0,0.2,1)}
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    html{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
-    body{min-height:100dvh;overflow-x:hidden}
-    button{font-family:inherit;cursor:pointer;border:none;outline:none;transition:var(--trans)}
-    input,textarea,select{font-family:inherit;outline:none}
-    ::selection{background:var(--accent);color:var(--accent-text)}
-    ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:99px}
-    .screen{min-height:100dvh;display:flex;flex-direction:column}
-
-    /* LOADING */
-    #screenLoading{align-items:center;justify-content:center}
-    .loading-n{width:72px;height:72px;border-radius:20px;margin:0 auto 20px;overflow:hidden;box-shadow:0 8px 32px rgba(237,242,82,0.3);animation:pulse 1.8s ease-in-out infinite}
-    @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
-    .loading-dots::after{content:'';animation:dots 1.5s steps(4,end) infinite}
-    @keyframes dots{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}100%{content:''}}
-
-    /* SETUP */
-    #screenSetup{align-items:center;justify-content:center;padding:24px;background-image:radial-gradient(ellipse 70% 50% at 50% -5%,rgba(237,242,82,0.07) 0%,transparent 60%)}
-    .setup-card{width:100%;max-width:460px;background:var(--bg2);border:1px solid var(--border);border-radius:24px;padding:38px 34px;box-shadow:var(--shadow)}
-    .setup-logo{display:flex;align-items:center;gap:10px;margin-bottom:6px}.logo-n-box{width:36px;height:36px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:900;color:var(--accent-text);flex-shrink:0}.logo-wordmark{font-size:20px;font-weight:800}.logo-wordmark span{color:var(--accent)}
-    .setup-sub{font-size:12px;color:var(--muted);margin-bottom:26px}
-    .setup-notice{padding:12px 14px;border-radius:var(--rs);margin-bottom:20px;background:var(--accent-low);border:1px solid rgba(237,242,82,0.2);font-size:12px;color:rgba(237,242,82,0.9);line-height:1.65}.setup-notice strong{color:var(--accent)}
-    .prefilled{padding:10px 14px;border-radius:var(--rs);margin-bottom:20px;background:rgba(255,255,255,0.03);border:1px solid var(--border);font-size:11px;color:var(--muted);font-family:monospace;line-height:1.9}.prefilled-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:6px;display:block}
-    .field{margin-bottom:14px}.flabel{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:5px;display:block}
-    .finput{width:100%;padding:10px 13px;border-radius:var(--rs);background:var(--glass);border:1px solid var(--border);color:var(--text);font-size:13px;font-family:monospace;transition:var(--trans)}.finput:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(237,242,82,0.1)}.finput::placeholder{color:var(--dim)}
-    .btn-setup{width:100%;padding:13px;border-radius:10px;background:var(--accent);color:var(--accent-text);font-size:14px;font-weight:800;margin-top:6px}.btn-setup:hover{opacity:0.9;transform:translateY(-1px)}
-    .setup-err{font-size:12px;color:var(--danger);text-align:center;margin-top:8px;min-height:18px}
-
-    /* LOGIN */
-    #screenLogin{align-items:center;justify-content:center;padding:24px;position:relative;overflow:hidden}
-    #screenLogin::before{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 80% 65% at 50% -15%,rgba(237,242,82,0.07) 0%,transparent 60%)}
-    .login-wrap{width:100%;max-width:360px;text-align:center;position:relative;z-index:1}
-    .login-icon-wrap{width:88px;height:88px;border-radius:24px;background:var(--accent);margin:0 auto 22px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 32px rgba(237,242,82,0.3)}.login-icon-inner{font-size:44px;font-weight:900;color:var(--accent-text);line-height:1}
-    .login-brand{font-size:44px;font-weight:900;letter-spacing:-2.5px;color:var(--accent);line-height:1}.login-tagline{font-size:12px;color:var(--muted);letter-spacing:2.5px;text-transform:uppercase;margin-top:6px;margin-bottom:44px}
-    .btn-google{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;padding:14px 24px;border-radius:14px;background:#fff;color:#1a1a1a;font-size:15px;font-weight:700;box-shadow:0 4px 20px rgba(0,0,0,0.4)}.btn-google:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,0.5)}.btn-google svg{width:20px;height:20px;flex-shrink:0}
-    .login-note{font-size:11px;color:var(--dim);margin-top:16px;line-height:1.5}.login-loading{font-size:13px;color:var(--muted);margin-top:14px;display:none;align-items:center;justify-content:center;gap:8px}.login-err{font-size:12px;color:var(--danger);margin-top:12px;display:none}
-
-    /* HEADER */
-    header{position:sticky;top:0;z-index:100;height:62px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:rgba(13,13,13,0.92);backdrop-filter:blur(28px) saturate(1.5);border-bottom:1px solid var(--border);gap:10px}
-    .h-logo{display:flex;align-items:center;gap:8px;flex-shrink:0}.h-logo .logo-n-box{width:28px;height:28px;border-radius:7px;font-size:14px}.h-wordmark{font-size:14px;font-weight:900;letter-spacing:0.5px}.h-wordmark span{color:var(--accent)}.h-wordmark small{font-weight:500;font-size:12px;color:var(--muted)}
-    .h-center{flex:1;display:flex;justify-content:center}.month-nav{display:flex;align-items:center;gap:6px}
-    .btn-nav{width:30px;height:30px;border-radius:7px;background:var(--glass);border:1px solid var(--border);color:var(--muted);font-size:16px;display:flex;align-items:center;justify-content:center}.btn-nav:hover{background:var(--glass-h);border-color:var(--accent);color:var(--accent)}
-    .month-lbl{font-size:13px;font-weight:700;min-width:136px;text-align:center}.month-lbl em{font-style:normal;color:var(--muted);font-weight:400;margin-left:3px;font-size:12px}
-    .h-right{display:flex;align-items:center;gap:7px;flex-shrink:0}
-    .btn-hdr-icon{width:32px;height:32px;border-radius:8px;background:var(--glass);border:1px solid var(--border);color:var(--muted);font-size:14px;display:flex;align-items:center;justify-content:center}.btn-hdr-icon:hover{background:var(--glass-h);border-color:var(--border-h);color:var(--text)}
-    .btn-hdr-accent{background:var(--accent);border-color:var(--accent);color:var(--accent-text)!important;font-size:11px;font-weight:800;width:auto;padding:0 12px;gap:5px}.btn-hdr-accent:hover{opacity:0.9;transform:translateY(-1px)}
-    .user-chip{display:flex;align-items:center;gap:6px;padding:3px 10px 3px 3px;border-radius:99px;background:var(--glass);border:1px solid var(--border);cursor:pointer;transition:var(--trans)}.user-chip:hover{border-color:var(--border-h);background:var(--glass-h)}
-    .user-avatar{width:26px;height:26px;border-radius:50%;background:var(--bg3);object-fit:cover;border:2px solid var(--accent)}.user-name{font-size:11px;font-weight:600;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .logout-btn{padding:5px 10px;border-radius:6px;background:rgba(255,77,77,0.1);border:1px solid rgba(255,77,77,0.2);color:var(--danger);font-size:11px;font-weight:700}.logout-btn:hover{background:rgba(255,77,77,0.18)}
-
-    /* WORKSPACE SWITCHER */
-    .ws-switcher{position:relative;flex-shrink:0}
-    .ws-btn{display:flex;align-items:center;gap:6px;padding:6px 11px;border-radius:8px;background:var(--glass);border:1px solid var(--border);color:var(--text);font-size:12px;font-weight:600;position:relative}.ws-btn:hover{background:var(--glass-h);border-color:rgba(237,242,82,0.3)}
-    .ws-btn-icon{font-size:13px}.ws-btn-name{max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ws-btn-arrow{color:var(--muted);font-size:10px}
-    .ws-badge{position:absolute;top:-5px;right:-5px;min-width:16px;height:16px;border-radius:8px;background:var(--danger);font-size:9px;font-weight:800;color:#fff;display:flex;align-items:center;justify-content:center;padding:0 4px}
-    .ws-logo-sm{width:18px;height:18px;border-radius:4px;object-fit:cover}
-    .ws-dropdown{position:absolute;top:calc(100% + 8px);left:0;width:260px;z-index:300;background:var(--bg2);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;display:none}.ws-dropdown.open{display:block}
-    .ws-dd-hdr{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:var(--dim);padding:12px 14px 6px}
-    .ws-dd-item{display:flex;align-items:center;gap:9px;padding:10px 14px;cursor:pointer;transition:var(--trans)}.ws-dd-item:hover{background:var(--glass)}.ws-dd-item.active{background:var(--accent-low)}
-    .ws-dd-item-icon{font-size:15px;flex-shrink:0;width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;overflow:hidden}.ws-dd-item-icon img{width:100%;height:100%;object-fit:cover;border-radius:5px}
-    .ws-dd-item-info{flex:1;min-width:0}.ws-dd-item-name{font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ws-dd-item-sub{font-size:10px;color:var(--muted)}
-    .ws-dd-item-badge{font-size:9px;font-weight:800;background:var(--danger);color:#fff;border-radius:99px;padding:1px 6px;flex-shrink:0}
-    .ws-dd-sep{height:1px;background:var(--border);margin:4px 0}.ws-dd-create{display:flex;align-items:center;gap:9px;padding:10px 14px 12px;cursor:pointer;transition:var(--trans);color:var(--accent);font-size:12px;font-weight:700}.ws-dd-create:hover{background:var(--accent-low)}
-
-    /* STATUS FILTER BAR */
-    .status-filter-bar{display:flex;align-items:center;gap:8px;padding:7px 20px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--border);background:rgba(13,13,13,0.5)}.status-filter-bar::-webkit-scrollbar{display:none}
-    .filter-label{font-size:10px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:1px;white-space:nowrap;flex-shrink:0}
-    .filter-chip{display:flex;align-items:center;gap:5px;padding:4px 11px;border-radius:99px;background:var(--glass);border:1px solid var(--border);font-size:11px;font-weight:600;white-space:nowrap;flex-shrink:0;cursor:pointer;transition:var(--trans);color:var(--muted)}.filter-chip:hover{background:var(--glass-h);border-color:var(--border-h);color:var(--text)}
-    .filter-chip.active-all{background:var(--accent);border-color:var(--accent);color:var(--accent-text)!important}.filter-chip.active-status{border-color:currentColor;background:rgba(255,255,255,0.05)}
-    .filter-sep{width:1px;height:18px;background:var(--border);flex-shrink:0}
-
-    /* MAIN */
-    main{flex:1;display:flex;gap:16px;padding:14px 20px 22px;max-width:1600px;margin:0 auto;width:100%}
-
-    /* SIDEBAR */
-    .sidebar{width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:10px}
-    .s-card{background:var(--glass);border:1px solid var(--border);border-radius:var(--r);padding:14px}
-    .s-title{font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
-    .s-client-item{display:flex;align-items:center;gap:7px;padding:5px 7px;border-radius:var(--rs);background:rgba(255,255,255,0.025);border:1px solid transparent;transition:var(--trans)}.s-client-item:hover{background:var(--glass-h);border-color:var(--border)}
-    .s-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}.s-name{font-size:11px;font-weight:600;flex:1}.s-count{font-size:9px;color:var(--muted)}.s-empty{font-size:12px;color:var(--dim);text-align:center;padding:8px 0}
-    .ct-row-sb{display:flex;align-items:center;gap:7px;padding:3px 0;font-size:11px;color:var(--muted)}.ct-row-sb .ico{font-size:12px;width:15px;text-align:center}
-    .ct-badge-sb{font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:auto}
-
-    /* SIDEBAR BUTTONS */
-    .btn-manage-side{width:100%;padding:8px;border-radius:var(--rs);background:var(--accent);color:var(--accent-text);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:5px;margin-top:9px}.btn-manage-side:hover{opacity:0.9;transform:translateY(-1px);box-shadow:0 4px 18px rgba(237,242,82,0.2)}
-    .btn-manage-sec{width:100%;padding:8px;border-radius:var(--rs);background:var(--glass);border:1px solid var(--border);color:var(--text);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:5px;margin-top:7px}.btn-manage-sec:hover{background:var(--glass-h);border-color:var(--border-h)}
-
-    /* SIDEBAR FILTERS */
-    .sidebar-filter-group{margin-bottom:9px}
-    .sidebar-filter-label{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;display:block;margin-bottom:4px}
-    .sidebar-filter-sel{width:100%;padding:7px 10px;border-radius:7px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-size:11px;font-weight:500;-webkit-appearance:auto;cursor:pointer;transition:var(--trans)}.sidebar-filter-sel:focus{border-color:var(--accent);outline:none}.sidebar-filter-sel option{background:var(--bg2);color:var(--text)}
-    .btn-clear-filters{width:100%;padding:7px;border-radius:7px;background:transparent;border:1px dashed var(--border);color:var(--dim);font-size:10px;font-weight:600;margin-top:4px;transition:var(--trans)}.btn-clear-filters:hover{border-color:var(--danger);color:var(--danger)}
-    .filter-active-indicator{display:flex;align-items:center;gap:4px;font-size:9px;font-weight:700;color:var(--accent);margin-bottom:7px}
-    .filter-active-dot{width:6px;height:6px;border-radius:50%;background:var(--accent)}
-
-    /* CALENDAR */
-    .cal-wrap{flex:1;min-width:0}
-    .readonly-banner{display:none;padding:8px 14px;border-radius:8px;background:rgba(255,165,2,0.1);border:1px solid rgba(255,165,2,0.25);color:#ffa502;font-size:11px;font-weight:600;margin-bottom:8px}.readonly-banner.show{display:flex;align-items:center;gap:7px}
-    .day-names-row{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px}
-    .day-name-cell{text-align:center;font-size:9px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:var(--muted);padding:5px 0}
-    .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-    .day-cell{min-height:108px;border-radius:9px;overflow:hidden;background:var(--glass);border:1px solid var(--border);cursor:pointer;transition:var(--trans);display:flex;flex-direction:column}.day-cell:hover:not(.outside){background:var(--glass-h);border-color:rgba(237,242,82,0.3);transform:translateY(-2px);box-shadow:0 6px 22px rgba(0,0,0,0.35)}.day-cell.outside{opacity:0.3;pointer-events:none}.day-cell.today{border-color:var(--accent)!important}.day-cell.today .day-num{color:var(--accent);font-weight:900}
-    .day-cell.f-dim{opacity:0.12!important;transform:none!important}.day-cell.f-hi{border-color:rgba(237,242,82,0.2)}
-    .day-color-bar{height:4px;width:100%;flex-shrink:0}
-    .day-num{padding:6px 8px 2px;font-size:12px;font-weight:700}
-    .day-posts-wrap{padding:0 6px 6px;flex:1;overflow:hidden;display:flex;flex-direction:column;gap:3px}
-    .cp-tag{border-radius:4px;padding:3px 5px;display:flex;flex-direction:column;gap:1px}
-    .cp-tag-line1{display:flex;align-items:center;gap:3px;font-size:9.5px;font-weight:800;color:#fff;line-height:1.3}
-    .cp-tag-type{display:inline-block;font-size:7.5px;font-weight:800;letter-spacing:0.5px;color:rgba(255,255,255,0.85);background:rgba(0,0,0,0.25);border-radius:3px;padding:0 3px}
-    .cp-tag-note{font-size:8px;color:rgba(255,255,255,0.65);font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .cp-tag-st{width:5px;height:5px;border-radius:50%;flex-shrink:0;margin-left:auto}
-    .cp-more{font-size:9px;color:var(--muted);padding:1px 0}
-    .cp-empty{display:flex;align-items:center;justify-content:center;flex:1;opacity:0;transition:opacity 0.15s;font-size:16px;color:var(--dim)}.day-cell:hover .cp-empty{opacity:1}
-
-    /* MODALS */
-    .overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.8);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:18px;opacity:0;pointer-events:none;transition:opacity 0.25s ease}.overlay.open{opacity:1;pointer-events:all}
-    .modal{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:24px;width:100%;max-width:520px;max-height:92dvh;overflow-y:auto;transform:scale(0.92) translateY(14px);opacity:0;transition:transform 0.32s cubic-bezier(0.34,1.56,0.64,1),opacity 0.25s;box-shadow:var(--shadow)}.overlay.open .modal{transform:scale(1) translateY(0);opacity:1}
-    .modal-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px}.modal-title{font-size:17px;font-weight:800;letter-spacing:-0.4px}.modal-sub{font-size:11px;color:var(--muted);margin-top:3px}
-    .btn-close{width:28px;height:28px;border-radius:7px;flex-shrink:0;background:var(--glass);color:var(--muted);font-size:13px;display:flex;align-items:center;justify-content:center}.btn-close:hover{background:rgba(255,77,77,0.15);color:var(--danger)}
-    .divider{height:1px;background:var(--border);margin:14px 0}
-    .sect-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}.sect-title{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
-
-    /* DAY MODAL – POSTS */
-    .posts-list{display:flex;flex-direction:column;gap:7px;margin-bottom:12px}
-    .post-item{display:flex;align-items:flex-start;gap:9px;padding:10px 11px;border-radius:10px;background:var(--glass);border:1px solid var(--border)}
-    .post-colordot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:3px}
-    .post-info{flex:1;min-width:0}.post-cname{font-size:12px;font-weight:700}
-    .post-badges{display:flex;align-items:center;gap:5px;margin-top:3px;flex-wrap:wrap}
-    .post-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:5px;font-size:9.5px;font-weight:800;letter-spacing:0.4px}
-    .post-status-sel{border:none;border-radius:99px;padding:2px 7px;font-size:9.5px;font-weight:700;cursor:pointer;-webkit-appearance:auto;max-width:150px}
-    .post-time{font-size:10px;color:var(--dim);display:flex;align-items:center;gap:3px}
-    .post-note{font-size:10.5px;color:var(--muted);font-style:italic;margin-top:3px;line-height:1.4}
-    .post-creator{display:flex;align-items:center;gap:5px;margin-top:5px;font-size:10px;color:var(--dim)}.post-creator-avatar{width:14px;height:14px;border-radius:50%;object-fit:cover}
-    .post-actions{display:flex;flex-direction:column;gap:3px;flex-shrink:0}
-    .btn-post-action{width:26px;height:26px;border-radius:6px;background:transparent;color:var(--muted);font-size:12px;display:flex;align-items:center;justify-content:center}.btn-post-action:hover{background:var(--glass-h);color:var(--text)}.btn-post-action.del:hover{background:rgba(255,77,77,0.15);color:var(--danger)}
-    .inline-note-edit{margin-top:6px}.inline-note-ta{width:100%;padding:6px 9px;border-radius:6px;background:var(--glass);border:1px solid var(--accent);color:var(--text);font-size:11px;resize:vertical;min-height:46px}
-    .inline-note-actions{display:flex;gap:5px;margin-top:4px}
-    .btn-note-save{padding:4px 10px;border-radius:5px;background:var(--accent);color:var(--accent-text);font-size:10px;font-weight:800}.btn-note-save:hover{opacity:0.9}
-    .btn-note-cancel{padding:4px 10px;border-radius:5px;background:var(--glass);border:1px solid var(--border);color:var(--muted);font-size:10px;font-weight:700}
-    .no-posts-msg{font-size:12px;color:var(--dim);text-align:center;padding:6px 0}
-
-    /* CLIENT DROPDOWN */
-    .cdd-wrap{position:relative;margin-bottom:12px}
-    .cdd-btn{display:flex;align-items:center;justify-content:space-between;padding:10px 13px;border-radius:9px;background:var(--glass);border:1px solid var(--border);cursor:pointer;transition:var(--trans);gap:8px}.cdd-btn:hover,.cdd-btn.open{border-color:rgba(237,242,82,0.4)}.cdd-btn.open{border-bottom-left-radius:0;border-bottom-right-radius:0;border-bottom-color:transparent}
-    .cdd-sel-items{display:flex;align-items:center;gap:6px;flex:1;flex-wrap:wrap;min-width:0}.cdd-placeholder{font-size:12px;color:var(--dim)}.cdd-sel-pill{display:flex;align-items:center;gap:4px;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700}
-    .cdd-arrow{color:var(--muted);font-size:11px;flex-shrink:0;transition:transform 0.2s}.cdd-btn.open .cdd-arrow{transform:rotate(180deg)}
-    .cdd-menu{position:absolute;top:100%;left:0;right:0;z-index:400;background:var(--bg2);border:1px solid rgba(237,242,82,0.4);border-top:none;border-bottom-left-radius:9px;border-bottom-right-radius:9px;box-shadow:var(--shadow);max-height:260px;overflow-y:auto;display:none}.cdd-menu.open{display:block}
-    .cdd-opt{display:flex;align-items:center;gap:8px;padding:9px 13px;cursor:pointer;transition:var(--trans)}.cdd-opt:hover{background:var(--glass)}.cdd-opt.sel{background:var(--accent-low)}
-    .cdd-check{width:16px;height:16px;border-radius:4px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;transition:var(--trans);color:transparent}.cdd-opt.sel .cdd-check{background:var(--accent);border-color:var(--accent);color:var(--accent-text)}
-    .cdd-dot-opt{width:8px;height:8px;border-radius:50%;flex-shrink:0}.cdd-opt-name{font-size:12px;font-weight:600;flex:1}
-    .cdd-sep{height:1px;background:var(--border);margin:4px 0}.cdd-new{display:flex;align-items:center;gap:7px;padding:9px 13px 11px;cursor:pointer;color:var(--accent);font-size:11px;font-weight:700;transition:var(--trans)}.cdd-new:hover{background:var(--accent-low)}
-
-    /* FORM ELEMENTS */
-    .type-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:5px}
-    .topt{display:flex;align-items:center;gap:7px;padding:8px 9px;border-radius:7px;background:var(--glass);border:2px solid transparent;cursor:pointer;transition:var(--trans);font-size:11px;font-weight:700;color:var(--muted)}.topt:hover{background:var(--glass-h);color:var(--text);border-color:var(--border)}.topt.sel{border-color:var(--accent);color:var(--text);background:var(--accent-low)}.topt .ico{font-size:13px}.topt .lbl{flex:1}.topt .tbadge{font-size:8px;font-weight:800;letter-spacing:0.5px;padding:1px 5px;border-radius:3px;border:1px solid currentColor;opacity:0.7}.topt.sel .tbadge{opacity:1}
-    .post-form-row{display:flex;gap:8px;margin-bottom:12px}.post-form-col{flex:1;min-width:0}
-    .form-sel{width:100%;padding:8px 10px;border-radius:7px;background:var(--glass);border:1px solid var(--border);color:var(--text);font-size:12px;font-weight:600;transition:var(--trans);-webkit-appearance:auto}.form-sel:focus{border-color:var(--accent)}
-    .form-time{width:100%;padding:8px 10px;border-radius:7px;background:var(--glass);border:1px solid var(--border);color:var(--text);font-size:13px;transition:var(--trans);color-scheme:dark}.form-time:focus{border-color:var(--accent)}
-    .time-suggestions{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}.time-chip{padding:3px 10px;border-radius:99px;background:var(--glass);border:1px solid var(--border);font-size:10px;color:var(--muted);cursor:pointer;transition:var(--trans)}.time-chip:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-low)}.time-chip-label{font-size:8px;color:var(--dim);margin-right:2px}
-    .note-ta{width:100%;padding:9px 11px;border-radius:7px;background:var(--glass);border:1px solid var(--border);color:var(--text);font-size:12px;resize:vertical;min-height:54px;transition:var(--trans)}.note-ta:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(237,242,82,0.08)}.note-ta::placeholder{color:var(--dim)}
-    .btn-add-post{width:100%;padding:11px;border-radius:9px;background:var(--accent);color:var(--accent-text);font-size:12px;font-weight:800;margin-top:12px;display:flex;align-items:center;justify-content:center;gap:5px}.btn-add-post:hover{opacity:0.9;transform:translateY(-1px);box-shadow:0 4px 22px rgba(237,242,82,0.22)}.btn-add-post:disabled{opacity:0.32;transform:none;cursor:not-allowed;box-shadow:none}
-
-    /* CLIENTS MODAL */
-    .cm-list{display:flex;flex-direction:column;gap:7px}
-    .cm-item{display:flex;align-items:center;gap:7px;padding:8px 10px;border-radius:9px;background:var(--glass);border:1px solid var(--border)}
-    .reorder-btns{display:flex;flex-direction:column;gap:2px;flex-shrink:0}
-    .btn-reorder{width:20px;height:18px;border-radius:3px;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--muted);font-size:9px;display:flex;align-items:center;justify-content:center}.btn-reorder:hover{background:var(--glass-h);color:var(--accent);border-color:var(--accent)}
-    .cm-swatch{width:30px;height:30px;border-radius:7px;flex-shrink:0;border:2px solid rgba(255,255,255,0.12);cursor:pointer;position:relative;overflow:hidden;transition:var(--trans)}.cm-swatch:hover{transform:scale(1.08);border-color:var(--accent)}.cm-swatch input[type="color"]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
-    .cm-name{flex:1;background:transparent;border:none;border-bottom:1px solid transparent;color:var(--text);font-size:12px;font-weight:600;padding:2px 3px;transition:var(--trans)}.cm-name:focus{border-bottom-color:var(--accent);outline:none}
-    .cm-hex{width:72px;padding:4px 6px;border-radius:5px;background:var(--glass);border:1px solid var(--border);color:var(--muted);font-size:9.5px;font-family:monospace;text-transform:uppercase;transition:var(--trans)}.cm-hex:focus{border-color:var(--accent);color:var(--text)}
-    .btn-cm-save{padding:5px 10px;border-radius:6px;background:var(--accent);color:var(--accent-text);font-size:10px;font-weight:800;white-space:nowrap}.btn-cm-save:hover{opacity:0.9}
-    .btn-cm-del{width:26px;height:26px;border-radius:5px;background:transparent;color:var(--muted);font-size:12px;display:flex;align-items:center;justify-content:center}.btn-cm-del:hover{background:rgba(255,77,77,0.15);color:var(--danger)}
-    .add-cm-card{margin-top:6px;padding:13px;border-radius:9px;background:rgba(237,242,82,0.04);border:1px dashed rgba(237,242,82,0.22)}
-    .add-cm-title{font-size:10px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:9px}
-    .add-cm-row{display:flex;align-items:center;gap:6px}
-    .cm-text-input{flex:1;padding:7px 10px;border-radius:var(--rs);background:var(--glass);border:1px solid var(--border);color:var(--text);font-size:12px;transition:var(--trans)}.cm-text-input:focus{border-color:var(--accent)}.cm-text-input::placeholder{color:var(--dim)}
-    .color-swatch-lg{width:36px;height:36px;border-radius:8px;border:2px solid var(--border);flex-shrink:0;position:relative;overflow:hidden;cursor:pointer;transition:var(--trans)}.color-swatch-lg:hover{border-color:var(--accent)}.color-swatch-lg input[type="color"]{position:absolute;inset:-4px;width:150%;height:150%;opacity:0;cursor:pointer}
-    .hex-input{width:76px;padding:7px 8px;border-radius:var(--rs);background:var(--glass);border:1px solid var(--border);color:var(--text);font-size:10px;font-family:monospace;text-transform:uppercase;transition:var(--trans)}.hex-input:focus{border-color:var(--accent)}
-    .btn-create{padding:7px 14px;border-radius:var(--rs);background:var(--accent);color:var(--accent-text);font-size:11px;font-weight:800;white-space:nowrap}.btn-create:hover{opacity:0.9}
-
-    /* CT & PLATFORMS MANAGER (settings modal + ct modal) */
-    .ct-item,.st-item,.plat-item{display:flex;align-items:center;gap:7px;padding:8px 10px;border-radius:8px;background:var(--glass);border:1px solid var(--border);margin-bottom:5px}
-    .ct-icon-input,.st-icon-input{width:36px;padding:4px;border-radius:5px;background:var(--glass);border:1px solid var(--border);color:var(--text);font-size:16px;text-align:center}.ct-icon-input:focus,.st-icon-input:focus{border-color:var(--accent);outline:none}
-    .ct-name-input,.st-name-input,.plat-name-input{flex:1;padding:5px 8px;border-radius:5px;background:var(--glass);border:1px solid var(--border);color:var(--text);font-size:11px}.ct-name-input:focus,.st-name-input:focus,.plat-name-input:focus{border-color:var(--accent);outline:none}
-    .ct-label-input{width:80px;padding:5px 8px;border-radius:5px;background:var(--glass);border:1px solid var(--border);color:var(--text);font-size:10px;font-family:monospace;text-transform:uppercase}.ct-label-input:focus{border-color:var(--accent);outline:none}
-    .ct-color-pick,.st-color-pick,.plat-color-pick{width:28px;height:28px;border-radius:5px;border:2px solid var(--border);overflow:hidden;cursor:pointer;position:relative;flex-shrink:0}.ct-color-pick input,.st-color-pick input,.plat-color-pick input{position:absolute;inset:-4px;width:150%;height:150%;opacity:0;cursor:pointer}
-    .btn-ct-save,.btn-st-save,.btn-plat-save{padding:4px 9px;border-radius:5px;background:var(--accent);color:var(--accent-text);font-size:9px;font-weight:800;white-space:nowrap}
-    .btn-ct-del,.btn-st-del,.btn-plat-del{width:24px;height:24px;border-radius:4px;background:transparent;color:var(--muted);font-size:11px;display:flex;align-items:center;justify-content:center}.btn-ct-del:hover,.btn-st-del:hover,.btn-plat-del:hover{background:rgba(255,77,77,0.15);color:var(--danger)}
-    .btn-add-setting{width:100%;padding:8px;border-radius:7px;background:rgba(237,242,82,0.06);border:1px dashed rgba(237,242,82,0.25);color:var(--accent);font-size:11px;font-weight:700;margin-top:4px}.btn-add-setting:hover{background:var(--accent-low)}
-    .settings-section-title{font-size:13px;font-weight:800;margin-bottom:10px;display:block}
-
-    /* WS SETTINGS */
-    .ws-member-item{display:flex;align-items:center;gap:9px;padding:10px 11px;border-radius:9px;background:var(--glass);border:1px solid var(--border);margin-bottom:6px}
-    .ws-member-avatar{width:32px;height:32px;border-radius:50%;object-fit:cover;background:var(--bg3);border:2px solid rgba(255,255,255,0.1);flex-shrink:0}
-    .ws-member-info{flex:1;min-width:0}.ws-member-name{font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ws-member-email{font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .ws-role-badge{font-size:9px;font-weight:800;padding:2px 8px;border-radius:99px;text-transform:uppercase;letter-spacing:0.5px;flex-shrink:0}.role-owner{background:rgba(237,242,82,0.15);color:var(--accent)}.role-editor{background:rgba(46,213,115,0.15);color:#2ed573}.role-viewer{background:rgba(255,255,255,0.08);color:var(--muted)}
-    .ws-role-select{padding:4px 8px;border-radius:6px;background:var(--glass);border:1px solid var(--border);color:var(--text);font-size:11px;font-weight:600}
-    .btn-ws-icon{width:28px;height:28px;border-radius:6px;flex-shrink:0;background:transparent;color:var(--muted);font-size:13px;display:flex;align-items:center;justify-content:center}.btn-ws-icon:hover{background:rgba(255,77,77,0.15);color:var(--danger)}
-    .pending-item{display:flex;align-items:center;gap:9px;padding:10px 11px;border-radius:9px;background:rgba(255,165,2,0.06);border:1px solid rgba(255,165,2,0.18);margin-bottom:6px}
-    .pending-select{padding:4px 8px;border-radius:6px;background:var(--glass);border:1px solid var(--border);color:var(--text);font-size:11px;font-weight:600}
-    .btn-approve{padding:5px 10px;border-radius:6px;background:rgba(46,213,115,0.15);border:1px solid rgba(46,213,115,0.3);color:#2ed573;font-size:10px;font-weight:800}.btn-reject{padding:5px 10px;border-radius:6px;background:rgba(255,77,77,0.1);border:1px solid rgba(255,77,77,0.2);color:var(--danger);font-size:10px;font-weight:800}
-    .invite-box{padding:11px 13px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);font-size:10px;font-family:monospace;color:var(--muted);word-break:break-all;margin-bottom:8px}
-    .invite-btns{display:flex;gap:7px}.btn-copy{padding:7px 14px;border-radius:7px;background:var(--accent);color:var(--accent-text);font-size:11px;font-weight:800}.btn-regen{padding:7px 14px;border-radius:7px;background:var(--glass);border:1px solid var(--border);color:var(--muted);font-size:11px;font-weight:700}.btn-regen:hover{background:var(--glass-h);color:var(--text)}
-    .danger-zone{margin-top:4px;padding:12px;border-radius:8px;background:rgba(255,77,77,0.05);border:1px solid rgba(255,77,77,0.15)}.danger-title{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--danger);margin-bottom:9px}
-    .btn-danger{padding:7px 14px;border-radius:7px;background:rgba(255,77,77,0.1);border:1px solid rgba(255,77,77,0.25);color:var(--danger);font-size:11px;font-weight:800;margin-right:7px}.btn-danger:hover{background:rgba(255,77,77,0.2)}
-
-    /* LOGO UPLOAD */
-    .logo-upload-wrap{display:flex;align-items:center;gap:14px;padding:12px;border-radius:10px;background:var(--glass);border:1px dashed var(--border);margin-bottom:14px}.logo-preview-box{width:72px;height:72px;border-radius:14px;background:var(--bg3);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:28px;overflow:hidden;flex-shrink:0}.logo-preview-box img{width:100%;height:100%;object-fit:cover;border-radius:12px}.logo-upload-info{flex:1}.logo-upload-title{font-size:12px;font-weight:700;margin-bottom:4px}.logo-upload-hint{font-size:10px;color:var(--dim);margin-top:4px}.btn-upload-logo{display:inline-block;padding:6px 13px;border-radius:7px;background:var(--glass);border:1px solid var(--border);color:var(--text);font-size:11px;font-weight:700;cursor:pointer;transition:var(--trans)}.btn-upload-logo:hover{border-color:var(--accent);color:var(--accent)}
-    input[type="file"].hidden{display:none}
-
-    /* ANALYTICS */
-    .analytics-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px}.stat-card{padding:14px;border-radius:10px;background:var(--glass);border:1px solid var(--border);text-align:center}.stat-card.main{background:var(--accent-low);border-color:rgba(237,242,82,0.2);grid-column:1/-1}.stat-num{font-size:32px;font-weight:900;letter-spacing:-2px;color:var(--accent);line-height:1}.stat-card.main .stat-num{font-size:40px}.stat-label{font-size:10px;color:var(--muted);margin-top:5px;font-weight:600}
-    .au-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;background:var(--glass);border:1px solid var(--border);margin-bottom:5px}.au-avatar{width:28px;height:28px;border-radius:50%;background:var(--bg3);object-fit:cover;flex-shrink:0}.au-info{flex:1;min-width:0}.au-name{font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.au-email{font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.au-last{font-size:10px;color:var(--dim);white-space:nowrap;flex-shrink:0}
-
-    /* TOAST + LOADER */
-    #toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(16px);background:rgba(28,28,28,0.96);backdrop-filter:blur(24px);border:1px solid var(--border-h);border-radius:99px;padding:9px 20px;font-size:12px;font-weight:600;z-index:9999;opacity:0;transition:all 0.3s ease;white-space:nowrap;pointer-events:none}#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-    .ld{width:15px;height:15px;border-radius:50%;border:2px solid rgba(255,255,255,0.2);border-top-color:var(--accent);animation:spin 0.6s linear infinite;display:inline-block;flex-shrink:0}
-    @keyframes spin{to{transform:rotate(360deg)}}
-
-    /* FAB */
-    .fab-group{display:none}
-
-    @media(max-width:860px){
-      header{padding:0 12px;height:56px;gap:7px}.h-wordmark small,.logout-btn,.user-name{display:none}
-      main{padding:8px 8px 78px;flex-direction:column;gap:8px}.sidebar{display:none}
-      .day-cell{min-height:58px;border-radius:7px}.day-num{font-size:10px;padding:4px 6px 1px}.day-posts-wrap{padding:0 4px 4px;gap:2px}.cp-tag{padding:2px 3px}.cp-tag-line1{font-size:8px}.cp-tag-note{display:none}.month-lbl{font-size:12px;min-width:104px}.status-filter-bar{padding:6px 10px}
-      .fab-group{display:flex;position:fixed;bottom:14px;right:12px;flex-direction:column;align-items:flex-end;gap:7px;z-index:150}.fab{width:48px;height:48px;border-radius:13px;background:var(--accent);color:var(--accent-text);font-size:19px;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 24px rgba(237,242,82,0.35)}.fab:hover{transform:scale(1.06)}.fab.sec{width:42px;height:42px;font-size:15px;border-radius:11px;background:var(--bg2);border:1px solid var(--border);color:var(--text);box-shadow:0 4px 16px rgba(0,0,0,0.4)}
-    }
-  </style>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800;900&family=Tektur:wght@600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css?v=9"/>
 </head>
 <body>
 
 <div id="screenLoading" class="screen">
   <div style="text-align:center">
-    <div class="loading-n"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block"><rect width="100" height="100" fill="#edf252"/><rect x="15" y="20" width="14" height="60" fill="#0d0d0d"/><rect x="15" y="20" width="52" height="13" fill="#0d0d0d"/><rect x="53" y="33" width="14" height="47" fill="#0d0d0d"/><polygon points="57,20 67,20 67,33" fill="#edf252"/><rect x="72" y="62" width="11" height="11" fill="#0d0d0d"/><polygon points="72,76 83,76 81,84 74,84" fill="#0d0d0d"/></svg></div>
-    <div style="font-weight:800;font-size:15px;letter-spacing:1px">NOOMA Calendar</div>
-    <div class="loading-dots" style="margin-top:6px;font-size:11px;color:var(--dim)">Carregando</div>
+    <div class="loading-n"><img src="logo-icon-xl.png" alt="NOOMA Calendar" style="width:100%;height:100%;object-fit:contain;display:block"/></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px"><img src="logo-wordmark.png" alt="NOOMA" class="nooma-wordmark-logo" style="height:22px;width:auto;display:block"/><div style="font-size:10px;font-weight:700;letter-spacing:2.5px;color:var(--muted);text-transform:uppercase">Calendar</div></div>
+    <div class="loading-dots"<div class="loading-dots" style="margin-top:6px;font-size:11px;color:var(--dim)">Carregando</div>
   </div>
 </div>
 
 <div id="screenSetup" class="screen" style="display:none">
   <div class="setup-card">
-    <div class="setup-logo"><div class="logo-n-box" style="overflow:hidden;padding:0"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block"><rect width="100" height="100" fill="#edf252" rx="8"/><rect x="15" y="20" width="14" height="60" fill="#0d0d0d"/><rect x="15" y="20" width="52" height="13" fill="#0d0d0d"/><rect x="53" y="33" width="14" height="47" fill="#0d0d0d"/><polygon points="57,20 67,20 67,33" fill="#edf252"/><rect x="72" y="62" width="11" height="11" fill="#0d0d0d"/><polygon points="72,76 83,76 81,84 74,84" fill="#0d0d0d"/></svg></div><div class="logo-wordmark"><span>NOOMA</span> Calendar</div></div>
-    <div class="setup-sub">Configuração inicial — apenas uma vez</div>
+    <div class="setup-logo"><img src="logo-wordmark.png" alt="NOOMA" class="nooma-wordmark-logo" style="height:26px;width:auto;display:block"/></div>
+    <div class="setup-sub">Configuração inicial: apenas uma vez</div>
     <div class="setup-notice">⚡ <strong>Quase pronto!</strong> Cole os campos do SDK do Firebase.<br><strong>Console Firebase → Configurações do Projeto → Seus Aplicativos → SDK</strong></div>
     <div class="prefilled"><span class="prefilled-title">✅ Já configurado</span>authDomain: <strong>calendario-agencia.firebaseapp.com</strong><br>projectId: <strong>calendario-agencia</strong><br>storageBucket: <strong>calendario-agencia.firebasestorage.app</strong><br>messagingSenderId: <strong>449749401473</strong></div>
     <div class="field"><label class="flabel" for="inp_apiKey">API Key *</label><input class="finput" type="text" id="inp_apiKey" placeholder="AIzaSy..." autocomplete="off" spellcheck="false"/></div>
@@ -266,22 +82,73 @@
 
 <div id="screenLogin" class="screen" style="display:none">
   <div class="login-wrap">
-    <div class="login-icon-wrap" style="overflow:hidden;padding:0"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block"><rect width="100" height="100" fill="#edf252"/><rect x="15" y="20" width="14" height="60" fill="#0d0d0d"/><rect x="15" y="20" width="52" height="13" fill="#0d0d0d"/><rect x="53" y="33" width="14" height="47" fill="#0d0d0d"/><polygon points="57,20 67,20 67,33" fill="#edf252"/><rect x="72" y="62" width="11" height="11" fill="#0d0d0d"/><polygon points="72,76 83,76 81,84 74,84" fill="#0d0d0d"/></svg></div>
-    <div class="login-brand">NOOMA</div>
-    <div class="login-tagline">Calendário da Agência</div>
-    <button class="btn-google" id="btnGoogle">
-      <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-      Entrar com Google
-    </button>
-    <div class="login-note">Após o primeiro login, você entra automaticamente.</div>
-    <div class="login-loading" id="loginLoading"><span class="ld"></span> Entrando...</div>
-    <div class="login-err" id="loginErr"></div>
+    <div id="langSwitcherLogin" style="display:flex;justify-content:center;gap:6px;margin-bottom:14px">
+      <button class="lang-flag-btn" data-lang="pt" title="Português">🇧🇷</button>
+      <button class="lang-flag-btn" data-lang="en" title="English">🇺🇸</button>
+      <button class="lang-flag-btn" data-lang="es" title="Español">🇪🇸</button>
+    </div>
+    <div id="inAppWarning" style="display:none;background:rgba(255,165,2,0.12);border:1px solid rgba(255,165,2,0.35);border-radius:12px;padding:12px 14px;margin-bottom:18px;font-size:12px;color:#ffa502;line-height:1.5;text-align:center">
+      ⚠️ Você está usando o navegador do WhatsApp/Instagram. Toque em <strong>⋯</strong> e escolha <strong>"Abrir no navegador"</strong> para conseguir fazer login.
+    </div>
+    <!-- Logo ícone calendário + logo NOOMA amarela -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:0;margin-bottom:8px">
+      <div style="width:72px;height:72px;border-radius:20px;overflow:hidden;box-shadow:0 8px 32px rgba(237,242,82,0.3);margin-bottom:14px">
+        <img src="logo-icon-xl.png" alt="NOOMA Calendar" style="width:100%;height:100%;object-fit:contain;display:block"/>
+      </div>
+      <img src="logo-icon-glow.png" alt="NOOMA" style="height:44px;width:auto;display:block;filter:drop-shadow(0 4px 20px rgba(237,242,82,0.35))"/>
+      <div style="font-size:10px;font-weight:700;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-top:6px;margin-bottom:28px">Calendar</div>
+    </div>
+
+    <!-- TABS: Entrar / Cadastrar -->
+    <div class="login-tabs" id="loginTabs">
+      <button class="login-tab active" data-ltab="signin" data-i18n="login.signin">Entrar</button>
+      <button class="login-tab" data-ltab="signup" data-i18n="login.signup">Criar conta</button>
+    </div>
+
+    <!-- FORM ENTRAR -->
+    <div class="login-form-section" id="loginSignIn">
+      <input class="login-input" type="email" id="siEmail" placeholder="E-mail" autocomplete="email" data-i18n-placeholder="login.email"/>
+      <input class="login-input" type="password" id="siPassword" placeholder="Senha" autocomplete="current-password" data-i18n-placeholder="login.password"/>
+      <button class="btn-login-primary" id="btnSignIn" data-i18n="login.signin">Entrar</button>
+      <button class="btn-forgot" id="btnForgot" data-i18n="login.forgot">Esqueci minha senha</button>
+      <div class="login-or"><span data-i18n="login.or">ou</span></div>
+      <button class="btn-google" id="btnGoogle">
+        <svg viewBox="0 0 24 24" style="width:20px;height:20px;flex-shrink:0"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        <span data-i18n="login.google">Entrar com Google</span>
+      </button>
+      <button class="btn-apple" id="btnApple">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;flex-shrink:0;fill:currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.7 9.05 7.4c1.38.07 2.33.74 3.13.8 1.19-.24 2.33-.93 3.6-.84 1.54.13 2.7.73 3.44 1.84-3.13 1.88-2.39 5.96.51 7.12-.59 1.54-1.36 3.06-2.68 3.96zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
+        <span data-i18n="login.apple">Entrar com Apple</span>
+      </button>
+    </div>
+
+    <!-- FORM CADASTRAR -->
+    <div class="login-form-section" id="loginSignUp" style="display:none">
+      <input class="login-input" type="text" id="suName" placeholder="Nome completo *" autocomplete="name" data-i18n-placeholder="login.fullnamePh"/>
+      <input class="login-input" type="tel" id="suPhone" placeholder="Celular com DDD (ex: 47 98486-9151) *" autocomplete="tel" data-i18n-placeholder="login.phonePh"/>
+      <input class="login-input" type="email" id="suEmail" placeholder="E-mail *" autocomplete="email" data-i18n-placeholder="login.emailPh"/>
+      <input class="login-input" type="password" id="suPassword" placeholder="Senha (mín. 6 caracteres) *" autocomplete="new-password" data-i18n-placeholder="login.passwordPh"/>
+      <button class="btn-login-primary" id="btnSignUp" data-i18n="login.createAccount">Criar minha conta</button>
+      <div class="login-or"><span data-i18n="login.orSignupWith">ou cadastre com</span></div>
+      <button class="btn-google" id="btnGoogleSignUp">
+        <svg viewBox="0 0 24 24" style="width:20px;height:20px;flex-shrink:0"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        <span data-i18n="login.continueGoogle">Continuar com Google</span>
+      </button>
+    </div>
+
+    <div class="login-note" data-i18n="login.terms">Ao criar uma conta, você concorda com nossos termos de uso.</div>
+    <div class="login-loading" id="loginLoading" style="display:none"><span class="ld"></span> Processando...</div>
+    <div class="login-err" id="loginErr" style="display:none"></div>
   </div>
 </div>
 
+
 <div id="screenApp" class="screen" style="display:none">
   <header>
-    <div class="h-logo"><div class="logo-n-box" style="overflow:hidden;padding:0"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block"><rect width="100" height="100" fill="#edf252" rx="6"/><rect x="15" y="20" width="14" height="60" fill="#0d0d0d"/><rect x="15" y="20" width="52" height="13" fill="#0d0d0d"/><rect x="53" y="33" width="14" height="47" fill="#0d0d0d"/><polygon points="57,20 67,20 67,33" fill="#edf252"/><rect x="72" y="62" width="11" height="11" fill="#0d0d0d"/><polygon points="72,76 83,76 81,84 74,84" fill="#0d0d0d"/></svg></div><div class="h-wordmark"><span>NOOMA</span> <small>Calendar</small></div></div>
+    <div class="h-logo">
+      <button class="btn-sidebar-toggle" id="btnSidebarToggle" title="Sidebar" data-i18n-title="hdr.sidebar">☰</button>
+      <img src="logo-wordmark.png" alt="NOOMA" class="nooma-wordmark-logo" style="height:18px;width:auto;display:block;flex-shrink:0"/>
+      <small id="appTabLabel">Calendar</small></div>
     <div class="ws-switcher">
       <button class="ws-btn" id="btnWsSwitcher"><span id="wsBtnIcon">📅</span><span class="ws-btn-name" id="wsBtnName">Pessoal</span><span class="ws-btn-arrow">▾</span><span class="ws-badge" id="wsBadge" style="display:none">0</span></button>
       <div class="ws-dropdown" id="wsDropdown">
@@ -291,67 +158,234 @@
         <div class="ws-dd-create" id="btnCreateWsLink"><span>🏢</span><span>Criar Workspace</span></div>
       </div>
     </div>
-    <div class="h-center"><div class="month-nav"><button class="btn-nav" id="btnPrev">&#8249;</button><div class="month-lbl" id="monthLbl">Julho <em>2026</em></div><button class="btn-nav" id="btnNext">&#8250;</button></div></div>
+    <div class="h-center">
+      <div class="month-nav">
+        <button class="btn-nav" id="btnPrev">&#8249;</button>
+        <div class="month-lbl" id="monthLbl">Julho <em>2026</em></div>
+        <button class="btn-nav" id="btnNext">&#8250;</button>
+      </div>
+      <div class="view-toggle">
+        <button class="view-btn active" data-view="month" data-i18n="view.month">Mês</button>
+        <button class="view-btn" data-view="week" data-i18n="view.week">Sem.</button>
+        <button class="view-btn" data-view="list" data-i18n="view.list">Lista</button>
+      </div>
+    </div>
     <div class="h-right">
-      <button class="btn-hdr-icon" id="btnSettings" title="Configurações (Plataformas + Status)">⚙️</button>
-      <button class="btn-hdr-icon" id="btnWsSettings" style="display:none" title="Configurações do Workspace">🏢</button>
-      <button class="btn-hdr-icon" id="btnAnalytics" style="display:none" title="Analytics">📊</button>
+      <div class="h-more-wrap" id="hMoreWrap">
+        <button class="btn-hdr-icon h-more-btn" id="btnHdrMore" title="Mais opções" data-i18n-title="hdr.moreOptions" aria-haspopup="true" aria-expanded="false">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="18" r="1.6"/></svg>
+        </button>
+        <div class="h-more-menu" id="hMoreMenu" role="menu">
+          <div class="h-more-lang-row" role="group" aria-label="Idioma / Language">
+            <button class="h-more-lang-btn" data-lang="pt" title="Português">🇧🇷</button>
+            <button class="h-more-lang-btn" data-lang="en" title="English">🇺🇸</button>
+            <button class="h-more-lang-btn" data-lang="es" title="Español">🇪🇸</button>
+          </div>
+          <button class="h-more-item" id="hMoreSearch" role="menuitem">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <span data-i18n="hdr.search">Buscar</span>
+          </button>
+          <button class="h-more-item" id="hMoreSettings" role="menuitem">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span data-i18n="hdr.settings">Configurações</span>
+          </button>
+          <button class="h-more-item" id="hMoreWsSettings" style="display:none" role="menuitem">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="1"/><line x1="9" y1="6" x2="9" y2="6.01"/><line x1="15" y1="6" x2="15" y2="6.01"/><line x1="9" y1="10" x2="9" y2="10.01"/><line x1="15" y1="10" x2="15" y2="10.01"/><line x1="9" y1="14" x2="9" y2="14.01"/><line x1="15" y1="14" x2="15" y2="14.01"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
+            <span data-i18n="hdr.wsSettings">Config. Workspace</span>
+          </button>
+          <button class="h-more-item btn-analytics-admin" id="hMoreAnalytics" style="display:none" role="menuitem">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+            <span data-i18n="hdr.analytics">Analytics</span>
+          </button>
+        </div>
+      </div>
+      <div class="lang-hdr-wrap" id="langHdrWrap">
+        <button class="btn-hdr-icon" id="btnLangHdr" title="Idioma / Language">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 4 6 4 9s-1.5 6.3-4 9c-2.5-2.7-4-6-4-9s1.5-6.3 4-9z"/></svg>
+        </button>
+        <div class="lang-hdr-menu" id="langHdrMenu">
+          <div class="lang-hdr-opt" data-lang="pt">Português</div>
+          <div class="lang-hdr-opt" data-lang="en">English</div>
+          <div class="lang-hdr-opt" data-lang="es">Español</div>
+        </div>
+      </div>
+      <button class="btn-search" id="btnSearch" title="Buscar" data-i18n-title="hdr.search"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+      <button class="btn-hdr-icon" id="btnSettings" title="Configurações (Plataformas + Status)" data-i18n-title="hdr.settingsFull"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+      <button class="btn-hdr-icon" id="btnWsSettings" style="display:none" title="Configurações do Workspace" data-i18n-title="hdr.wsSettings"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="1"/><line x1="9" y1="6" x2="9" y2="6.01"/><line x1="15" y1="6" x2="15" y2="6.01"/><line x1="9" y1="10" x2="9" y2="10.01"/><line x1="15" y1="10" x2="15" y2="10.01"/><line x1="9" y1="14" x2="9" y2="14.01"/><line x1="15" y1="14" x2="15" y2="14.01"/><line x1="9" y1="18" x2="15" y2="18"/></svg></button>
+      <button class="btn-hdr-notif" id="btnNotif" style="display:none" title="Pedidos de entrada pendentes" data-i18n-title="hdr.pendingRequests">🔔<span class="notif-badge" id="notifBadge">0</span></button>
+      <button class="notif-bell" id="btnNotifCenter" title="Notificações" data-i18n-title="hdr.notifications"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-bell-badge" id="notifBellBadge" style="display:none">0</span></button>
+      <button class="btn-hdr-icon btn-analytics-admin" id="btnAnalytics" style="display:none" title="Analytics" data-i18n-title="hdr.analytics"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg></button>
       <div class="user-chip" id="userChip"><img class="user-avatar" id="userAvatar" src="" alt=""/><span class="user-name" id="userName">...</span></div>
       <button class="logout-btn" id="btnLogout">Sair</button>
     </div>
   </header>
 
   <!-- STATUS FILTER BAR ONLY -->
+  <div class="app-tabs" id="appTabs">
+    <button class="app-tab active" data-tab="calendar"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> <span data-i18n="nav.calendar">Calendário</span></button>
+    <button class="app-tab" data-tab="projects"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg> <span data-i18n="nav.projects">Projetos</span> <span class="app-tab-badge" id="projTabBadge" style="display:none">0</span></button>
+    <button class="app-tab" data-tab="tasks"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg> <span data-i18n="nav.tasks">Tarefas</span> <span class="app-tab-badge" id="taskTabBadge" style="display:none">0</span></button>
+  </div>
   <div class="status-filter-bar" id="statusFilterBar"></div>
+  <div class="heatmap-legend" id="heatmapLegend">
+    <span data-i18n="heatmap.legendTitle">Cor mostra quantos posts tem cada dia:</span>
+    <span class="heatmap-legend-bar"></span>
+    <span class="heatmap-legend-low" data-i18n="heatmap.legendLow">poucos</span>
+    <span class="heatmap-legend-arrow">→</span>
+    <span class="heatmap-legend-high" data-i18n="heatmap.legendHigh">muitos</span>
+  </div>
 
-  <main>
-    <aside class="sidebar">
-      <!-- CLIENTS -->
+  <div class="app-body" id="appBody">
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <aside class="sidebar" id="sidebar">
       <div class="s-card">
-        <div class="s-title">Clientes</div>
+        <div class="s-title" data-i18n="sidebar.clients">Clientes</div>
         <div id="sidebarClients"></div>
-        <button class="btn-manage-side" id="btnManageSide">✏️ Gerenciar Clientes</button>
+        <button class="btn-manage-side" id="btnManageSide">✏️ <span data-i18n="sidebar.manageClients">Gerenciar Clientes</span></button>
       </div>
-
-      <!-- CONTENT TYPES -->
       <div class="s-card">
-        <div class="s-title">Tipos de Conteúdo</div>
+        <div class="s-title" data-i18n="sidebar.contentTypes">Tipos de Conteúdo</div>
         <div id="sidebarCT"></div>
-        <button class="btn-manage-side" id="btnManageCT">✏️ Gerenciar Tipos</button>
+        <button class="btn-manage-side" id="btnManageCT">✏️ <span data-i18n="sidebar.manageTypes">Gerenciar Tipos</span></button>
       </div>
-
-      <!-- FILTERS -->
       <div class="s-card">
-        <div class="s-title">Filtros</div>
+        <div class="s-title" data-i18n="sidebar.filters">Filtros</div>
         <div id="filterActiveHint" style="display:none" class="filter-active-indicator"><span class="filter-active-dot"></span>Filtros ativos</div>
         <div class="sidebar-filter-group">
           <label class="sidebar-filter-label">Cliente</label>
-          <select class="sidebar-filter-sel" id="filterSelClient"><option value="">Todos os clientes</option></select>
+          <div class="nsel-wrap" id="filterSelClientWrap">
+            <div class="nsel-btn" id="filterSelClientBtn"><span class="nsel-dot" id="filterSelClientDot"></span><span class="nsel-label" id="filterSelClientLabel">Todos os clientes</span><span class="nsel-arrow">▾</span></div>
+            <div class="nsel-menu" id="filterSelClientMenu"></div>
+          </div>
         </div>
         <div class="sidebar-filter-group">
           <label class="sidebar-filter-label">Tipo de Conteúdo</label>
-          <select class="sidebar-filter-sel" id="filterSelCT"><option value="">Todos os tipos</option></select>
+          <div class="nsel-wrap" id="filterSelCTWrap">
+            <div class="nsel-btn" id="filterSelCTBtn"><span class="nsel-dot" id="filterSelCTDot"></span><span class="nsel-label" id="filterSelCTLabel">Todos os tipos</span><span class="nsel-arrow">▾</span></div>
+            <div class="nsel-menu" id="filterSelCTMenu"></div>
+          </div>
         </div>
         <div class="sidebar-filter-group">
           <label class="sidebar-filter-label">Plataforma</label>
-          <select class="sidebar-filter-sel" id="filterSelPlatform"><option value="">Todas as plataformas</option></select>
+          <div class="nsel-wrap" id="filterSelPlatWrap">
+            <div class="nsel-btn" id="filterSelPlatBtn"><span class="nsel-dot" id="filterSelPlatDot"></span><span class="nsel-label" id="filterSelPlatLabel">Todas as plataformas</span><span class="nsel-arrow">▾</span></div>
+            <div class="nsel-menu" id="filterSelPlatMenu"></div>
+          </div>
         </div>
-        <button class="btn-clear-filters" id="btnClearFilters">✕ Limpar Filtros</button>
+        <button class="btn-clear-filters" id="btnClearFilters">✕ <span data-i18n="sidebar.clearFilters">Limpar Filtros</span></button>
       </div>
     </aside>
 
-    <div class="cal-wrap">
-      <div class="readonly-banner" id="readonlyBanner">👁️ Modo visualização — não é possível editar</div>
-      <div class="day-names-row"><div class="day-name-cell">Dom</div><div class="day-name-cell">Seg</div><div class="day-name-cell">Ter</div><div class="day-name-cell">Qua</div><div class="day-name-cell">Qui</div><div class="day-name-cell">Sex</div><div class="day-name-cell">Sáb</div></div>
-      <div class="cal-grid" id="calGrid"></div>
+    <div class="content-area">
+      <!-- MONTH VIEW -->
+      <div class="cal-wrap" id="viewMonth">
+        <div class="readonly-banner" id="readonlyBanner">👁️ Modo visualização: não é possível editar</div>
+        <div class="day-names-row">
+          <div class="day-name-cell">Dom</div><div class="day-name-cell">Seg</div><div class="day-name-cell">Ter</div>
+          <div class="day-name-cell">Qua</div><div class="day-name-cell">Qui</div><div class="day-name-cell">Sex</div><div class="day-name-cell">Sáb</div>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+      <!-- WEEK VIEW -->
+      <div class="week-view" id="viewWeek">
+        <div class="week-header" id="weekHeader"></div>
+        <div class="week-cols" id="weekCols"></div>
+      </div>
+      <!-- LIST VIEW -->
+      <div class="list-view" id="viewList">
+        <div id="listContent"></div>
+      </div>
     </div>
-  </main>
+  </div>
+
+
+
+<!-- PROJETOS SCREEN -->
+<div id="screenProjects">
+  <!-- Mobile: tabs de status -->
+  <div class="proj-status-tabs" id="projStatusTabsMobile"></div>
+
+  <div class="proj-layout">
+    <!-- Desktop: rail de status -->
+    <div class="proj-rail-overlay" id="projRailOverlay"></div>
+    <nav class="proj-rail" id="projRail">
+      <div class="proj-rail-title">Status</div>
+      <div id="projRailItems"></div>
+      <div class="proj-rail-sep"></div>
+      <div class="proj-rail-title" style="margin-top:4px">Serviços</div>
+      <div id="projRailServices"></div>
+    </nav>
+
+    <!-- Conteúdo principal -->
+    <div class="proj-content">
+      <!-- Urgency banner -->
+      <div class="proj-urgency-banner" id="projUrgencyBanner">
+        <span class="proj-urgency-icon">🔴</span>
+        <span class="proj-urgency-text" id="projUrgencyText">Projetos com prazo crítico</span>
+        <button class="proj-urgency-link" id="projUrgencyLink">Ver agora</button>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="proj-toolbar">
+        <div class="proj-toolbar-title" id="projToolbarTitle">Todos os Projetos</div>
+        <input class="proj-search-input" id="projSearch" placeholder="🔍 Buscar projeto..." data-i18n-placeholder="proj.searchPh"/>
+        <!-- VIEW TOGGLE -->
+        <div class="proj-view-toggle">
+          <button class="proj-view-btn active" data-pview="list" title="Lista">☰ Lista</button>
+          <button class="proj-view-btn" data-pview="cols-status" title="Colunas por Status" data-i18n-title="proj.colsByStatus">▦ Status</button>
+          <button class="proj-view-btn" data-pview="cols-owner" title="Colunas por Responsável" data-i18n-title="proj.colsByOwner">👤 Equipe</button>
+        </div>
+        <div class="proj-sort-wrap">
+          <span class="proj-sort-label">Ordenar:</span>
+          <div class="nsel-wrap proj-sort-nsel" id="projSortWrap">
+            <div class="nsel-btn" id="projSortBtn"><span class="nsel-label" id="projSortLabel">Prazo ↑</span><span class="nsel-arrow">▾</span></div>
+            <div class="nsel-menu" id="projSortMenu">
+              <div class="nsel-opt sel" data-sv="deadline">📅 Prazo ↑</div>
+              <div class="nsel-opt" data-sv="urgency">🔴 Urgência</div>
+              <div class="nsel-opt" data-sv="client">👥 Cliente A–Z</div>
+              <div class="nsel-opt" data-sv="value">💰 Valor ↓</div>
+              <div class="nsel-opt" data-sv="created">🕐 Mais recente</div>
+            </div>
+          </div>
+        </div>
+        <label class="proj-show-completed-toggle" id="projShowCompletedToggle" title="Mostrar projetos concluídos e cancelados">
+          <input type="checkbox" id="projShowCompletedCheck"/>
+          <span class="pstc-track"><span class="pstc-thumb"></span></span>
+          <span class="pstc-label" data-i18n="proj.showCompleted">Concluídos</span>
+        </label>
+        <label class="proj-show-completed-toggle" id="projSyncCalToggle" title="Mostrar apenas projetos do mês selecionado no Calendário" data-i18n-title="proj.syncCalendarTitle">
+          <input type="checkbox" id="projSyncCalCheck"/>
+          <span class="pstc-track"><span class="pstc-thumb"></span></span>
+          <span class="pstc-label" id="projSyncCalLabel" data-i18n="proj.syncCalendar">Mês do Calendário</span>
+        </label>
+        <button class="btn-proj-settings" id="btnProjExport" title="Exportar Relatorio" data-i18n-title="export.title">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v13m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+        </button>
+        <button class="btn-proj-settings" id="btnProjSettings" title="Configurar Status" data-i18n-title="proj.configStatus">⚙️</button>
+        <button class="btn-new-proj" id="btnNewProj">+ <span data-i18n="proj.newProject">Novo Projeto</span></button>
+      </div>
+
+      <!-- Lista -->
+      <div class="proj-list" id="projList"></div>
+      <!-- Vista Colunas -->
+      <div class="proj-cols-view" id="projColsView" style="display:none"></div>
+    </div>
+  </div>
+</div>
 
   <div class="fab-group">
-    <button class="fab" id="fabClients">👥</button>
-    <button class="fab sec" id="fabCT">🎬</button>
-    <button class="fab sec" id="fabSettings">⚙️</button>
+    <button class="fab" id="fabClients" title="Gerenciar Clientes" aria-label="Gerenciar Clientes" data-i18n-title="fab.manageClients">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    </button>
+    <button class="fab sec" id="fabCT" title="Gerenciar Tipos de Conteúdo" aria-label="Gerenciar Tipos de Conteúdo" data-i18n-title="fab.manageTypes">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+    </button>
+    <button class="fab sec" id="fabSettings" title="Configurações" aria-label="Configurações" data-i18n-title="hdr.settings">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
   </div>
+  <div class="app-footer-credit" id="appFooterCredit">© 2026 Agência NOOMA · Desenvolvido por <a href="https://agencianooma.com.br/" target="_blank" rel="noopener noreferrer">agencianooma.com.br</a></div>
 </div>
 
 <!-- DAY MODAL -->
@@ -359,7 +393,7 @@
   <div class="modal">
     <div class="modal-hdr">
       <div><div class="modal-title" id="dayModalTitle">Dia</div><div class="modal-sub" id="dayModalSub">2026</div></div>
-      <button class="btn-close" id="btnCloseDayModal">✕</button>
+      <button class="btn-close" id="btnCloseDayModal" title="Fechar" data-i18n-title="common.close">✕</button>
     </div>
     <div id="postsList" class="posts-list"></div>
     <div id="noPostsMsg" class="no-posts-msg" style="display:none">Nenhuma postagem neste dia</div>
@@ -377,8 +411,7 @@
           <div style="font-size:10px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:7px">Criar novo cliente</div>
           <div style="display:flex;align-items:center;gap:5px">
             <input style="flex:1;padding:6px 9px;border-radius:6px;background:var(--glass);border:1px solid var(--border);color:var(--text);font-size:11px" type="text" id="inlineClientName" placeholder="Nome do cliente..." maxlength="30"/>
-            <div style="width:30px;height:30px;border-radius:6px;border:2px solid var(--border);position:relative;overflow:hidden;cursor:pointer" id="inlineColorThumb"><input type="color" id="inlineClientColor" value="#edf252"/></div>
-            <input style="width:70px;padding:6px 7px;border-radius:6px;background:var(--glass);border:1px solid var(--border);color:var(--text);font-size:10px;font-family:monospace;text-transform:uppercase" type="text" id="inlineClientHex" value="#EDF252" maxlength="7"/>
+            <div class="ncp-swatch" id="inlineClientColorSwatch" style="width:30px;height:30px;border-radius:6px;background:#edf252;flex-shrink:0"></div>
             <button style="padding:6px 10px;border-radius:6px;background:var(--accent);color:var(--accent-text);font-size:10px;font-weight:800" id="btnSaveInlineClient">Criar</button>
           </div>
         </div>
@@ -392,7 +425,7 @@
       <div style="margin-bottom:12px">
         <div class="sect-title" style="margin-bottom:7px">Plataforma</div>
         <div class="cdd-wrap" id="platDdWrap">
-          <div class="cdd-btn" id="platDdBtn"><div class="cdd-sel-items" id="platDdSelItems"><span class="cdd-placeholder">— Não especificada —</span></div><span class="cdd-arrow">▾</span></div>
+          <div class="cdd-btn" id="platDdBtn"><div class="cdd-sel-items" id="platDdSelItems"><span class="cdd-placeholder">Não especificada</span></div><span class="cdd-arrow">▾</span></div>
           <div class="cdd-menu" id="platDdMenu"></div>
         </div>
       </div>
@@ -400,7 +433,10 @@
       <div class="post-form-row">
         <div class="post-form-col">
           <div class="sect-title" style="margin-bottom:5px">Status Inicial</div>
-          <select class="form-sel" id="newPostStatus"></select>
+          <div class="nsel-wrap" id="newPostStatusWrap">
+              <div class="nsel-btn" id="newPostStatusBtn"><span class="nsel-dot show" id="newPostStatusDot" style="background:var(--muted)"></span><span class="nsel-label" id="newPostStatusLabel">Rascunho</span><span class="nsel-arrow">▾</span></div>
+              <div class="nsel-menu" id="newPostStatusMenu"></div>
+            </div>
         </div>
         <div class="post-form-col">
           <div class="sect-title" style="margin-bottom:5px">Horário</div>
@@ -418,12 +454,198 @@
   </div>
 </div>
 
+<!-- NOTIFICATION CENTER -->
+<div class="notif-center-overlay" id="notifCenterOverlay"></div>
+<div class="notif-center" id="notifCenter">
+  <div class="notif-hdr">
+    <div class="notif-hdr-title">🔔 Notificações</div>
+    <div class="notif-hdr-actions">
+      <button class="btn-mark-all" id="btnMarkAllRead">Marcar todas como lidas</button>
+      <button class="btn-close" id="btnCloseNotifCenter" title="Fechar" data-i18n-title="common.close">✕</button>
+    </div>
+  </div>
+  <div class="notif-list" id="notifList"></div>
+</div>
+
+<!-- SEARCH -->
+<div class="search-overlay" id="searchOverlay">
+  <div class="search-box">
+    <div class="search-input-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="searchInput" placeholder="Buscar por cliente, nota, data..." autocomplete="off"/>
+      <button class="btn-search-close" id="btnSearchClose">✕</button>
+    </div>
+  </div>
+  <div class="search-results" id="searchResults"><div class="search-hint">Digite para buscar em todo o calendário</div></div>
+</div>
+
+<!-- ONBOARDING WIZARD -->
+<div class="wizard-overlay" id="wizardOverlay" style="display:none">
+  <div class="wizard-card">
+    <div class="wizard-step-dots" id="wizardDots"></div>
+    <div id="wizardContent"></div>
+  </div>
+</div>
+
+<!-- PWA BANNER -->
+<div class="pwa-banner" id="pwaBanner">
+  <div class="pwa-banner-icon">
+    <img src="logo-icon-xl.png" alt="NOOMA Calendar" style="width:36px;height:36px;object-fit:contain;display:block;border-radius:8px"/>
+  </div>
+  <div class="pwa-banner-text">
+    <div class="pwa-banner-title">NOOMA Calendar</div>
+    <div class="pwa-banner-sub" data-i18n="pwa.subtitle">Acesse mais rápido</div>
+  </div>
+  <button class="btn-pwa-install" id="btnPwaInstall" data-i18n="pwa.install">Instalar</button>
+  <button class="btn-pwa-dismiss" id="btnPwaDismiss">✕</button>
+</div>
+
+<!-- SUPPORT / CONTACT MODAL -->
+<div class="overlay" id="supportOverlay">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-hdr">
+      <div>
+        <div class="modal-title">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px;margin-right:6px"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+          <span data-i18n="support.title">Fale com o Suporte</span>
+        </div>
+        <div class="modal-sub" data-i18n="support.subtitle">Estamos por aqui para ajudar</div>
+      </div>
+      <button class="btn-close" id="btnCloseSupport" title="Fechar" data-i18n-title="common.close">✕</button>
+    </div>
+
+    <a class="support-contact-row" href="https://wa.me/5547984869151" target="_blank" rel="noopener noreferrer">
+      <div class="support-contact-icon" style="background:#25D36622;color:#25D366">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M17.6 6.32A8.86 8.86 0 0012.05 4a8.94 8.94 0 00-7.75 13.4L3 21l3.7-1.27a8.92 8.92 0 004.33 1.12h.01a8.94 8.94 0 006.56-15.53zM12.06 19.4a7.4 7.4 0 01-3.78-1.03l-.27-.16-2.8.96.94-2.73-.18-.28a7.44 7.44 0 01-1.15-3.97 7.42 7.42 0 1114.8.32 7.44 7.44 0 01-7.56 6.9zm4.08-5.56c-.22-.11-1.31-.65-1.51-.72-.2-.07-.35-.11-.5.11-.15.22-.57.72-.7.87-.13.15-.26.16-.48.05a6.08 6.08 0 01-1.79-1.1 6.7 6.7 0 01-1.24-1.54c-.13-.22 0-.34.1-.45.1-.1.22-.26.33-.39.1-.13.13-.22.2-.37.07-.15.03-.28-.02-.4-.05-.11-.5-1.2-.68-1.65-.18-.43-.36-.37-.5-.38h-.43c-.15 0-.39.05-.6.28-.2.22-.79.77-.79 1.87s.81 2.17.92 2.32c.11.15 1.6 2.44 3.87 3.42.54.23.96.37 1.29.48.54.17 1.03.15 1.42.09.43-.06 1.31-.53 1.5-1.05.18-.51.18-.95.13-1.05-.05-.1-.2-.16-.42-.27z"/></svg>
+      </div>
+      <div class="support-contact-info">
+        <div class="support-contact-name">WhatsApp</div>
+        <div class="support-contact-detail">+55 47 98486-9151</div>
+      </div>
+      <svg class="support-contact-arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    </a>
+
+    <a class="support-contact-row" href="https://instagram.com/agencianooma" target="_blank" rel="noopener noreferrer">
+      <div class="support-contact-icon" style="background:#E1306C22;color:#E1306C">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+      </div>
+      <div class="support-contact-info">
+        <div class="support-contact-name">Instagram</div>
+        <div class="support-contact-detail">@agencianooma</div>
+      </div>
+      <svg class="support-contact-arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    </a>
+
+    <a class="support-contact-row" href="mailto:contato@agencianooma.com.br">
+      <div class="support-contact-icon" style="background:#edf25222;color:#edf252">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      </div>
+      <div class="support-contact-info">
+        <div class="support-contact-name" data-i18n="support.email">E-mail</div>
+        <div class="support-contact-detail">contato@agencianooma.com.br</div>
+      </div>
+      <svg class="support-contact-arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    </a>
+  </div>
+</div>
+
+<!-- EXPORT CALENDAR REPORT MODAL -->
+<div class="overlay" id="calExportOverlay">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-hdr">
+      <div>
+        <div class="modal-title">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px;margin-right:6px"><path d="M12 3v13m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+          <span data-i18n="calExport.title">Exportar Calendário</span>
+        </div>
+        <div class="modal-sub" id="calExportSub" data-i18n="calExport.subtitle">Escolha o que incluir no relatório</div>
+      </div>
+      <button class="btn-close" id="btnCloseCalExport" title="Fechar" data-i18n-title="common.close">✕</button>
+    </div>
+
+    <div class="sect-title" style="margin-bottom:8px" data-i18n="calExport.clients">Clientes</div>
+    <div class="export-preset-row" style="margin-bottom:8px">
+      <button class="export-preset-btn" id="btnCalExportAllClients" data-i18n="export.presetAll">Todos os Status</button>
+      <button class="export-preset-btn" id="btnCalExportNoClients" data-i18n="export.presetNone">Limpar</button>
+    </div>
+    <div id="calExportClientList" class="export-status-list" style="max-height:130px;margin-bottom:14px"></div>
+
+    <div class="sect-title" style="margin-bottom:8px" data-i18n="calExport.statuses">Status</div>
+    <div class="export-preset-row" style="margin-bottom:8px">
+      <button class="export-preset-btn" id="btnCalExportAllStatuses" data-i18n="export.presetAll">Todos os Status</button>
+      <button class="export-preset-btn" id="btnCalExportNoStatuses" data-i18n="export.presetNone">Limpar</button>
+    </div>
+    <div id="calExportStatusList" class="export-status-list" style="max-height:130px"></div>
+
+    <div class="divider"></div>
+
+    <div class="export-format-row">
+      <button class="export-format-btn" id="btnCalExportXlsx" data-export="xlsx">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span data-i18n="export.excel">Excel (.xlsx)</span>
+      </button>
+      <button class="export-format-btn" id="btnCalExportPdf" data-export="pdf">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span data-i18n="export.pdf">PDF</span>
+      </button>
+      <button class="export-format-btn" id="btnCalExportWord" data-export="word">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span data-i18n="export.word">Word (.doc)</span>
+      </button>
+    </div>
+    <div class="export-count-hint" id="calExportCountHint"></div>
+  </div>
+</div>
+
+<!-- EXPORT PROJECTS REPORT MODAL -->
+<div class="overlay" id="projExportOverlay">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-hdr">
+      <div>
+        <div class="modal-title">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px;margin-right:6px"><path d="M12 3v13m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+          <span data-i18n="export.title">Exportar Relatorio</span>
+        </div>
+        <div class="modal-sub" data-i18n="export.subtitle">Escolha quais projetos incluir</div>
+      </div>
+      <button class="btn-close" id="btnCloseProjExport" title="Fechar" data-i18n-title="common.close">✕</button>
+    </div>
+
+    <div class="export-preset-row">
+      <button class="export-preset-btn" id="btnExportPresetCompleted" data-i18n="export.presetCompleted">Apenas Concluidos</button>
+      <button class="export-preset-btn" id="btnExportPresetAll" data-i18n="export.presetAll">Todos os Status</button>
+      <button class="export-preset-btn" id="btnExportPresetNone" data-i18n="export.presetNone">Limpar</button>
+    </div>
+
+    <div class="sect-title" style="margin:14px 0 8px" data-i18n="export.selectStatuses">Status a incluir</div>
+    <div id="exportStatusList" class="export-status-list"></div>
+
+    <div class="divider"></div>
+
+    <div class="export-format-row">
+      <button class="export-format-btn" id="btnExportXlsx" data-export="xlsx">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span data-i18n="export.excel">Excel (.xlsx)</span>
+      </button>
+      <button class="export-format-btn" id="btnExportPdf" data-export="pdf">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span data-i18n="export.pdf">PDF</span>
+      </button>
+      <button class="export-format-btn" id="btnExportWord" data-export="word">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span data-i18n="export.word">Word (.doc)</span>
+      </button>
+    </div>
+    <div class="export-count-hint" id="exportCountHint"></div>
+  </div>
+</div>
+
 <!-- CLIENTS MODAL -->
 <div class="overlay" id="clientsOverlay">
   <div class="modal" style="max-width:480px">
     <div class="modal-hdr">
       <div><div class="modal-title">👥 Gerenciar Clientes</div><div class="modal-sub" id="clientsModalSub">Calendário Pessoal</div></div>
-      <button class="btn-close" id="btnCloseClientsModal">✕</button>
+      <button class="btn-close" id="btnCloseClientsModal" title="Fechar" data-i18n-title="common.close">✕</button>
     </div>
     <div class="cm-list" id="clientsManager"></div>
     <div class="divider"></div>
@@ -431,8 +653,7 @@
       <div class="add-cm-title">+ Novo Cliente</div>
       <div class="add-cm-row">
         <input class="cm-text-input" type="text" id="newClientName" placeholder="Nome do cliente..." maxlength="30"/>
-        <div class="color-swatch-lg" id="newColorSwatchWrap"><input type="color" id="newClientColor" value="#edf252"/></div>
-        <input class="hex-input" type="text" id="newClientHex" value="#EDF252" maxlength="7"/>
+        <div class="ncp-swatch color-swatch-lg" id="newClientColorSwatch" style="background:#edf252"></div>
         <button class="btn-create" id="btnCreateClient">Criar</button>
       </div>
     </div>
@@ -444,7 +665,7 @@
   <div class="modal" style="max-width:540px">
     <div class="modal-hdr">
       <div><div class="modal-title">🎬 Tipos de Conteúdo</div><div class="modal-sub">Gerencie os formatos de postagem</div></div>
-      <button class="btn-close" id="btnCloseCT">✕</button>
+      <button class="btn-close" id="btnCloseCT" title="Fechar" data-i18n-title="common.close">✕</button>
     </div>
     <div id="ctManager"></div>
     <button class="btn-add-setting" id="btnAddCT">+ Adicionar Tipo</button>
@@ -455,16 +676,16 @@
 <div class="overlay" id="settingsOverlay">
   <div class="modal" style="max-width:540px">
     <div class="modal-hdr">
-      <div><div class="modal-title">⚙️ Configurações</div><div class="modal-sub">Plataformas e status de posts</div></div>
-      <button class="btn-close" id="btnCloseSettings">✕</button>
+      <div><div class="modal-title">⚙️ <span data-i18n="settings.title">Configurações</span></div><div class="modal-sub" data-i18n="settings.subtitle">Plataformas e status de posts</div></div>
+      <button class="btn-close" id="btnCloseSettings" title="Fechar" data-i18n-title="common.close">✕</button>
     </div>
-    <span class="settings-section-title">📱 Plataformas</span>
+    <span class="settings-section-title">📱 <span data-i18n="settings.platforms">Plataformas</span></span>
     <div id="platManager"></div>
-    <button class="btn-add-setting" id="btnAddPlat">+ Adicionar Plataforma</button>
+    <button class="btn-add-setting" id="btnAddPlat" data-i18n="settings.addPlatform">+ Adicionar Plataforma</button>
     <div class="divider"></div>
-    <span class="settings-section-title">📋 Status de Posts</span>
+    <span class="settings-section-title">📋 <span data-i18n="settings.postStatus">Status de Posts</span></span>
     <div id="stManager"></div>
-    <button class="btn-add-setting" id="btnAddST">+ Adicionar Status</button>
+    <button class="btn-add-setting" id="btnAddST" data-i18n="settings.addStatus">+ Adicionar Status</button>
   </div>
 </div>
 
@@ -472,8 +693,8 @@
 <div class="overlay" id="wsSettingsOverlay">
   <div class="modal" style="max-width:520px">
     <div class="modal-hdr">
-      <div><div class="modal-title" id="wsSettingsTitle">⚙️ Workspace</div><div class="modal-sub" id="wsSettingsSub">Membros e convites</div></div>
-      <button class="btn-close" id="btnCloseWsSettings">✕</button>
+      <div><div class="modal-title" id="wsSettingsTitle">⚙️ Workspace</div><div class="modal-sub" id="wsSettingsSub" data-i18n="ws.members">Membros e convites</div></div>
+      <button class="btn-close" id="btnCloseWsSettings" title="Fechar" data-i18n-title="common.close">✕</button>
     </div>
     <div id="wsSettingsContent"></div>
   </div>
@@ -483,8 +704,8 @@
 <div class="overlay" id="createWsOverlay">
   <div class="modal" style="max-width:420px">
     <div class="modal-hdr">
-      <div><div class="modal-title">🏢 Criar Workspace</div><div class="modal-sub">Calendário compartilhado com a equipe</div></div>
-      <button class="btn-close" id="btnCloseCreateWs">✕</button>
+      <div><div class="modal-title">🏢 <span data-i18n="ws.create">Criar Workspace</span></div><div class="modal-sub" data-i18n="ws.createSubtitle">Calendário compartilhado com a equipe</div></div>
+      <button class="btn-close" id="btnCloseCreateWs" title="Fechar" data-i18n-title="common.close">✕</button>
     </div>
     <div class="logo-upload-wrap">
       <div class="logo-preview-box" id="wsLogoPreview">🏢</div>
@@ -504,8 +725,8 @@
 <div class="overlay" id="analyticsOverlay">
   <div class="modal" style="max-width:540px">
     <div class="modal-hdr">
-      <div><div class="modal-title">📊 Analytics</div><div class="modal-sub">Visão exclusiva do administrador</div></div>
-      <button class="btn-close" id="btnCloseAnalytics">✕</button>
+      <div><div class="modal-title"><span class="btn-analytics-admin" style="display:inline-flex;vertical-align:-3px;margin-right:6px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg></span><span data-i18n="analytics.title">Analytics</span></div><div class="modal-sub" data-i18n="analytics.subtitle">Visão exclusiva do administrador</div></div>
+      <button class="btn-close" id="btnCloseAnalytics" title="Fechar" data-i18n-title="common.close">✕</button>
     </div>
     <div id="analyticsContent"></div>
   </div>
@@ -513,800 +734,432 @@
 
 <div id="toast"></div>
 
-<script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, browserLocalPersistence, setPersistence } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-    import { initializeFirestore, persistentLocalCache, collection, doc, setDoc, getDoc, getDocs, updateDoc, deleteDoc, onSnapshot, writeBatch, query, where, arrayUnion, arrayRemove, deleteField, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+<script src="i18n.js?v=8"></script>
+<script src="icons.js?v=4"></script>
+<script type="module" src="app.js?v=12"></script>
 
-// ─── Constants ─────────────────────────────────────────────────────────────────
-const ADMIN_EMAIL = 'kabomboombam@hotmail.com';
-const MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-const DAYS = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
-const MIN_Y=2026,MIN_M=7,MAX_Y=2032,MAX_M=12;
-const FIREBASE_CONFIG={apiKey:'AIzaSyASbEQ2oZd5uWtIGdl5iE_hvzL5_9k5k68',authDomain:'calendario-agencia.firebaseapp.com',projectId:'calendario-agencia',storageBucket:'calendario-agencia.firebasestorage.app',messagingSenderId:'449749401473',appId:'1:449749401473:web:5814994bc306a316903280',measurementId:'G-01MR0BS7D6'};
-const DEFAULT_CONTENT_TYPES=[
-  {id:'Reels',    name:'Reels',    label:'REELS',    icon:'🎬',bgColor:'#ff4444',textColor:'#fff',order:0},
-  {id:'Feed',     name:'Feed',     label:'FEED',     icon:'📸',bgColor:'#2ed573',textColor:'#fff',order:1},
-  {id:'Carrossel',name:'Carrossel',label:'CARROSSEL',icon:'🎠',bgColor:'#74b9ff',textColor:'#fff',order:2},
-  {id:'Foto',     name:'Foto',     label:'FOTO',     icon:'🖼️',bgColor:'#ffa502',textColor:'#fff',order:3},
-];
-const DEFAULT_STATUSES=[
-  {id:'draft',    name:'Rascunho',          icon:'📝',color:'#888888',order:0},
-  {id:'review',   name:'Revisão do Cliente',icon:'👀',color:'#ffa502',order:1},
-  {id:'approved', name:'Aprovado',          icon:'✅',color:'#2ed573',order:2},
-  {id:'scheduled',name:'Agendado',          icon:'📅',color:'#74b9ff',order:3},
-  {id:'published',name:'Publicado',         icon:'🚀',color:'#edf252',order:4},
-];
-const DEFAULT_PLATFORMS=[
-  {id:'instagram',name:'Instagram',icon:'📸',color:'#E1306C',order:0},
-  {id:'youtube',  name:'YouTube',  icon:'▶️',color:'#FF0000',order:1},
-  {id:'tiktok',   name:'TikTok',   icon:'🎵',color:'#FF0050',order:2},
-];
-const PLATFORM_BEST_TIMES={instagram:['09:00','12:00','19:00'],youtube:['15:00','17:00','20:00'],tiktok:['07:00','15:00','21:00']};
-
-// ─── State ─────────────────────────────────────────────────────────────────────
-let fbApp,auth,db,currentUser=null;
-let unsubClients=null,unsubPosts=null,unsubCT=null,unsubST=null,unsubPlat=null,unsubWorkspaces=null;
-const pendingListeners={};
-let clientDdOpen=false,platDdOpen=false,pendingLogoBase64=null;
-
-const state={
-  year:2026,month:7,
-  clients:[],posts:{},
-  contentTypes:[...DEFAULT_CONTENT_TYPES],
-  postStatuses:[...DEFAULT_STATUSES],
-  platforms:[...DEFAULT_PLATFORMS],
-  filterClientId:null,filterContentType:null,filterPlatform:null,filterStatus:null,
-  currentWorkspace:null,userWorkspaces:[],
-  form:{selectedClients:[],selectedType:null,status:'draft',scheduledTime:'',platform:''},
-};
-
-// ─── Utilities ─────────────────────────────────────────────────────────────────
-const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
-const dk=(y,m,d)=>`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-const getC=id=>state.clients.find(c=>c.id===id);
-const getCT=id=>{if(!id)return null;return state.contentTypes.find(t=>t.id===id)||state.contentTypes.find(t=>t.name===id)||state.contentTypes.find(t=>t.id.toLowerCase()===id.toLowerCase());};
-const getST=id=>state.postStatuses.find(s=>s.id===id)||state.postStatuses[0];
-const getPlat=id=>state.platforms.find(p=>p.id===id);
-const fmtDate=d=>d.toISOString().slice(0,10);
-const generateCode=()=>Math.random().toString(36).substr(2,8).toUpperCase();
-const buildGradient=cs=>!cs.length?'transparent':cs.length===1?cs[0]:`linear-gradient(90deg,${cs.map((c,i)=>`${c} ${i*100/cs.length}%,${c} ${(i+1)*100/cs.length}%`).join(',')})`;
-let _tt=null;
-function toast(msg,dur=2800){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');if(_tt)clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),dur);}
-function relativeTime(ts){if(!ts)return'nunca';const d=ts.seconds?new Date(ts.seconds*1000):new Date(ts);const diff=Math.floor((Date.now()-d)/1000);if(diff<60)return'agora';if(diff<3600)return`${Math.floor(diff/60)} min atrás`;if(diff<86400)return`${Math.floor(diff/3600)}h atrás`;if(diff<2592000)return`${Math.floor(diff/86400)} dias atrás`;return d.toLocaleDateString('pt-BR');}
-
-// ─── Screen ─────────────────────────────────────────────────────────────────────
-function showScreen(id){['screenLoading','screenSetup','screenLogin','screenApp'].forEach(s=>{const el=document.getElementById(s);if(!el)return;el.style.display=(s===id)?'flex':'none';if(s===id)el.style.flexDirection='column';});}
-
-// ─── LocalStorage ───────────────────────────────────────────────────────────────
-function saveNav(){localStorage.setItem('nooma_nav',JSON.stringify({y:state.year,m:state.month}));}
-function loadNav(){try{const o=JSON.parse(localStorage.getItem('nooma_nav')||'{}');if(o.y){state.year=o.y;state.month=o.m;}}catch(e){}}
+<!-- CHARTS PANEL -->
+<div class="charts-panel" id="chartsPanel">
+  <div class="charts-hdr">
+    <div>
+      <div class="charts-title"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg><span data-i18n="charts.title">Análise de Conteúdo</span></div>
+      <div class="charts-subtitle" id="chartsSubtitle" data-i18n="charts.subtitle">Visão geral de todas as postagens</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="btn-proj-settings" id="btnCalExport" title="Exportar Calendário" data-i18n-title="calExport.title">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v13m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+      </button>
+      <button class="btn-close" id="btnCloseCharts" style="width:36px;height:36px;font-size:18px" title="Fechar" data-i18n-title="common.close">✕</button>
+    </div>
+  </div>
+  <div class="chart-summary" id="chartsSummary"></div>
+  <div style="margin-top:16px" class="charts-grid" id="chartsGrid"></div>
+</div>
 
 
-// ─── Data Path ─────────────────────────────────────────────────────────────────
-function dataRoot(){return state.currentWorkspace?`workspaces/${state.currentWorkspace.id}`:`users/${currentUser.uid}`;}
-function canEdit(){if(!state.currentWorkspace)return true;return['owner','editor'].includes(state.currentWorkspace.role);}
+<!-- TASKS SCREEN -->
+<div id="screenTasks">
+  <div class="task-toolbar">
+    <input class="task-search-input" id="taskSearch" placeholder="Buscar tarefa..." data-i18n-placeholder="tasks.searchPlaceholder"/>
+    <label class="proj-show-completed-toggle" id="taskShowDoneToggle" title="Mostrar tarefas concluídas" data-i18n-title="tasks.showDoneTitle">
+      <input type="checkbox" id="taskShowDoneCheck" checked/>
+      <span class="pstc-track"><span class="pstc-thumb"></span></span>
+      <span class="pstc-label" data-i18n="tasks.showDone">Concluídas</span>
+    </label>
+    <button class="btn-new-proj" id="btnNewTask">+ <span data-i18n="tasks.newTask">Nova Tarefa</span></button>
+  </div>
 
-// ─── Firebase Init ─────────────────────────────────────────────────────────────
-async function initFirebase(){
-  if(fbApp)return;
-  try{
-    fbApp=initializeApp(FIREBASE_CONFIG);
-    auth=getAuth(fbApp);
-    // persistentLocalCache usa IndexedDB e pode travar em alguns browsers/dispositivos
-    try{
-      db=initializeFirestore(fbApp,{localCache:persistentLocalCache()});
-    }catch(cacheErr){
-      console.warn('Cache persistente indisponível, usando memória:',cacheErr.message);
-      db=initializeFirestore(fbApp,{});
-    }
-    // setPersistence também pode falhar em modo privado ou dispositivos restritos
-    try{await setPersistence(auth,browserLocalPersistence);}catch(e){}
-    onAuthStateChanged(auth,async user=>{
-      if(user){
-        currentUser=user;
-        const av=document.getElementById('userAvatar'),un=document.getElementById('userName');
-        if(av&&user.photoURL)av.src=user.photoURL;
-        if(un)un.textContent=user.displayName||'Você';
-        if(user.email===ADMIN_EMAIL)document.getElementById('btnAnalytics').style.display='flex';
-        trackActivity(user);
-        await setupAllListeners(user.uid);
-        await checkInviteURL();
-        showScreen('screenApp');
-        renderAll();
-      }else{currentUser=null;teardownListeners();showScreen('screenLogin');}
-    });
-  }catch(e){
-    console.error('Erro ao inicializar Firebase:',e);
-    showScreen('screenLogin');
-  }
-}
+  <div class="task-board" id="taskBoard"></div>
 
-async function trackActivity(user){
-  if(!db)return;
-  try{
-    const today=fmtDate(new Date()),ref=doc(db,'_users',user.uid),snap=await getDoc(ref),isNew=!snap.exists();
-    await setDoc(ref,{email:user.email||'',displayName:user.displayName||'',photoURL:user.photoURL||null,lastSeen:serverTimestamp(),...(isNew?{createdAt:serverTimestamp()}:{})},{merge:true});
-    await setDoc(doc(db,'_daily',today),{users:arrayUnion(user.uid)},{merge:true});
-  }catch(e){}
-}
+  <div class="task-empty" id="taskEmptyState" style="display:none">
+    <div class="task-empty-icon">
+      <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+    </div>
+    <div class="task-empty-title" data-i18n="tasks.emptyTitle">Nenhuma tarefa ainda</div>
+    <div class="task-empty-sub" data-i18n="tasks.emptySub">Crie sua primeira tarefa e organize o que precisa ser feito, dia após dia.</div>
+  </div>
+</div>
 
-// ─── Listeners ─────────────────────────────────────────────────────────────────
-function teardownListeners(){
-  [unsubClients,unsubPosts,unsubCT,unsubST,unsubPlat,unsubWorkspaces].forEach(u=>u&&u());
-  unsubClients=unsubPosts=unsubCT=unsubST=unsubPlat=unsubWorkspaces=null;
-  Object.values(pendingListeners).forEach(u=>u());Object.keys(pendingListeners).forEach(k=>delete pendingListeners[k]);
-}
+<!-- TASK MODAL -->
+<div class="overlay" id="taskModalOverlay">
+  <div class="modal proj-modal" style="max-width:520px">
+    <div class="modal-hdr">
+      <input class="task-title-input" id="taskTitleInput" placeholder="Nome da tarefa..." data-i18n-placeholder="tasks.titlePlaceholder" maxlength="120"/>
+      <button class="btn-close" id="btnCloseTaskModal" title="Fechar" data-i18n-title="common.close">✕</button>
+    </div>
 
-async function setupAllListeners(uid){
-  if(unsubWorkspaces)unsubWorkspaces();
-  const wsQ=query(collection(db,'workspaces'),where('memberUids','array-contains',uid));
-  unsubWorkspaces=onSnapshot(wsQ,snap=>{
-    state.userWorkspaces=snap.docs.map(d=>{const data=d.data();const m=data.members?.[uid];const role=data.ownerId===uid?'owner':(m?.role||'viewer');return{id:d.id,...data,role};});
-    setupPendingListeners();renderWorkspaceSwitcher();
-  });
-  setupDataListeners();
-}
-
-async function initDefaults(root,collName,defaults){
-  const snap=await getDocs(collection(db,root,collName));
-  if(snap.empty){const batch=writeBatch(db);defaults.forEach(item=>batch.set(doc(db,root,collName,item.id),item));await batch.commit();}
-}
-
-function setupDataListeners(){
-  [unsubClients,unsubPosts,unsubCT,unsubST,unsubPlat].forEach(u=>u&&u());
-  unsubClients=unsubPosts=unsubCT=unsubST=unsubPlat=null;
-  const root=dataRoot();
-
-  unsubClients=onSnapshot(collection(db,root,'clients'),snap=>{
-    state.clients=snap.docs.map((d,i)=>({order:i,...d.data(),id:d.id})).sort((a,b)=>a.order-b.order);
-    renderAll();
-  },e=>console.warn('clients:',e.message));
-
-  unsubPosts=onSnapshot(collection(db,root,'posts'),snap=>{
-    state.posts={};
-    snap.docs.forEach(d=>{const data=d.data();if(!state.posts[data.date])state.posts[data.date]=[];state.posts[data.date].push({id:d.id,...data});});
-    renderAll();
-  },e=>console.warn('posts:',e.message));
-
-  initDefaults(root,'contentTypes',DEFAULT_CONTENT_TYPES).catch(()=>{});
-  unsubCT=onSnapshot(collection(db,root,'contentTypes'),snap=>{
-    if(snap.empty){state.contentTypes=[...DEFAULT_CONTENT_TYPES];}
-    else{state.contentTypes=snap.docs.map(d=>({...d.data(),id:d.id})).sort((a,b)=>a.order-b.order);}
-    renderAll();
-  },()=>{state.contentTypes=[...DEFAULT_CONTENT_TYPES];renderAll();});
-
-  initDefaults(root,'postStatuses',DEFAULT_STATUSES).catch(()=>{});
-  unsubST=onSnapshot(collection(db,root,'postStatuses'),snap=>{
-    if(snap.empty){state.postStatuses=[...DEFAULT_STATUSES];}
-    else{state.postStatuses=snap.docs.map(d=>({...d.data(),id:d.id})).sort((a,b)=>a.order-b.order);}
-    renderAll();
-  },()=>{state.postStatuses=[...DEFAULT_STATUSES];renderAll();});
-
-  initDefaults(root,'platforms',DEFAULT_PLATFORMS).catch(()=>{});
-  unsubPlat=onSnapshot(collection(db,root,'platforms'),snap=>{
-    if(snap.empty){state.platforms=[...DEFAULT_PLATFORMS];}
-    else{state.platforms=snap.docs.map(d=>({...d.data(),id:d.id})).sort((a,b)=>a.order-b.order);}
-    renderAll();
-  },()=>{state.platforms=[...DEFAULT_PLATFORMS];renderAll();});
-}
-
-function setupPendingListeners(){
-  const ownedIds=new Set(state.userWorkspaces.filter(w=>w.ownerId===currentUser?.uid).map(w=>w.id));
-  Object.keys(pendingListeners).forEach(wid=>{if(!ownedIds.has(wid)){pendingListeners[wid]();delete pendingListeners[wid];}});
-  ownedIds.forEach(wid=>{if(pendingListeners[wid])return;pendingListeners[wid]=onSnapshot(collection(db,'workspaces',wid,'pendingRequests'),snap=>{const ws=state.userWorkspaces.find(w=>w.id===wid);if(ws){ws.pendingCount=snap.size;ws.pendingList=snap.docs.map(d=>({uid:d.id,...d.data()}));}renderWorkspaceSwitcher();});});
-}
-
-// ─── Workspace Ops ─────────────────────────────────────────────────────────────
-function switchWorkspace(ws){
-  state.currentWorkspace=ws;state.clients=[];state.posts={};state.filterClientId=null;state.filterContentType=null;state.filterPlatform=null;state.filterStatus=null;
-  setupDataListeners();closeWsDropdown();renderAll();renderWorkspaceSwitcher();
-  document.getElementById('btnWsSettings').style.display=ws?'flex':'none';
-  document.getElementById('readonlyBanner').classList.toggle('show',ws&&ws.role==='viewer');
-}
-
-async function createWorkspace(name,logo){
-  const wid=uid(),code=generateCode();
-  const wsData={name,logo:logo||null,ownerId:currentUser.uid,ownerEmail:currentUser.email,memberUids:[currentUser.uid],editorUids:[currentUser.uid],members:{[currentUser.uid]:{email:currentUser.email,displayName:currentUser.displayName||currentUser.email,photoURL:currentUser.photoURL||null,role:'owner',joinedAt:serverTimestamp()}},inviteCode:code,createdAt:serverTimestamp()};
-  const batch=writeBatch(db);
-  batch.set(doc(db,'workspaces',wid),wsData);
-  batch.set(doc(db,'_invites',code),{workspaceId:wid,workspaceName:name,ownerId:currentUser.uid,ownerName:currentUser.displayName||currentUser.email});
-  await batch.commit();
-  toast(`✅ Workspace "${name}" criado!`);
-  return{id:wid,...wsData,role:'owner'};
-}
-
-async function requestToJoin(code){
-  try{const inviteDoc=await getDoc(doc(db,'_invites',code));if(!inviteDoc.exists()){toast('❌ Convite inválido');return;}const{workspaceId,workspaceName}=inviteDoc.data();const wsDoc=await getDoc(doc(db,'workspaces',workspaceId));if(wsDoc.exists()&&(wsDoc.data().memberUids||[]).includes(currentUser.uid)){toast('✅ Você já é membro!');const d={id:wsDoc.id,...wsDoc.data()};const m=d.members?.[currentUser.uid];d.role=d.ownerId===currentUser.uid?'owner':(m?.role||'viewer');switchWorkspace(d);return;}await setDoc(doc(db,'workspaces',workspaceId,'pendingRequests',currentUser.uid),{uid:currentUser.uid,email:currentUser.email,displayName:currentUser.displayName||currentUser.email,photoURL:currentUser.photoURL||null,requestedAt:serverTimestamp()});toast(`🔔 Solicitação enviada para "${workspaceName}"!`,4500);}catch(e){toast(`❌ Erro: ${e.message}`);}
-}
-async function approveRequest(wid,req,role){const batch=writeBatch(db);batch.delete(doc(db,'workspaces',wid,'pendingRequests',req.uid));const updates={memberUids:arrayUnion(req.uid),[`members.${req.uid}`]:{email:req.email,displayName:req.displayName,photoURL:req.photoURL||null,role,joinedAt:serverTimestamp()}};if(role!=='viewer')updates.editorUids=arrayUnion(req.uid);batch.update(doc(db,'workspaces',wid),updates);await batch.commit();toast(`✅ ${req.displayName} aprovado!`);}
-async function rejectRequest(wid,reqUid,reqName){if(!confirm(`Rejeitar solicitação de "${reqName}"?`))return;await deleteDoc(doc(db,'workspaces',wid,'pendingRequests',reqUid));toast('❌ Rejeitado');}
-async function updateMemberRole(wid,targetUid,newRole){const updates={[`members.${targetUid}.role`]:newRole};if(newRole==='viewer')updates.editorUids=arrayRemove(targetUid);else if(newRole==='editor')updates.editorUids=arrayUnion(targetUid);await updateDoc(doc(db,'workspaces',wid),updates);toast(`✅ Role atualizado`);}
-async function removeMember(wid,targetUid,targetName){if(!confirm(`Remover "${targetName}"?`))return;await updateDoc(doc(db,'workspaces',wid),{memberUids:arrayRemove(targetUid),editorUids:arrayRemove(targetUid),[`members.${targetUid}`]:deleteField()});toast(`🗑 ${targetName} removido`);}
-async function leaveWorkspace(wid){if(!confirm('Sair deste workspace?'))return;await updateDoc(doc(db,'workspaces',wid),{memberUids:arrayRemove(currentUser.uid),editorUids:arrayRemove(currentUser.uid),[`members.${currentUser.uid}`]:deleteField()});switchWorkspace(null);toast('👋 Você saiu');}
-async function deleteWorkspace(wid,wsName){if(!confirm(`Deletar workspace "${wsName}" permanentemente?`))return;const ws=state.userWorkspaces.find(w=>w.id===wid);try{const[cs,ps,prs]=await Promise.all([getDocs(collection(db,'workspaces',wid,'clients')),getDocs(collection(db,'workspaces',wid,'posts')),getDocs(collection(db,'workspaces',wid,'pendingRequests'))]);const batch=writeBatch(db);[...cs.docs,...ps.docs,...prs.docs].forEach(d=>batch.delete(d.ref));batch.delete(doc(db,'workspaces',wid));if(ws?.inviteCode)batch.delete(doc(db,'_invites',ws.inviteCode));await batch.commit();switchWorkspace(null);toast('🗑 Workspace deletado');}catch(e){toast(`❌ Erro: ${e.message}`);}}
-async function regenerateInviteCode(wid){const ws=state.userWorkspaces.find(w=>w.id===wid);if(!ws)return;const newCode=generateCode();const batch=writeBatch(db);if(ws.inviteCode)batch.delete(doc(db,'_invites',ws.inviteCode));batch.set(doc(db,'_invites',newCode),{workspaceId:wid,workspaceName:ws.name,ownerId:currentUser.uid,ownerName:currentUser.displayName||currentUser.email});batch.update(doc(db,'workspaces',wid),{inviteCode:newCode});await batch.commit();toast('🔄 Novo link gerado!');}
-
-// ─── Firestore CRUD ─────────────────────────────────────────────────────────────
-async function saveClient(client){if(!db||!currentUser)return;await setDoc(doc(db,dataRoot(),'clients',client.id),client);}
-async function removeClient(clientId){if(!db||!currentUser)return;const root=dataRoot();await deleteDoc(doc(db,root,'clients',clientId));const snap=await getDocs(collection(db,root,'posts'));const batch=writeBatch(db);snap.docs.forEach(d=>{if(d.data().clientId===clientId)batch.delete(d.ref);});await batch.commit();}
-async function updateClientOrder(clients){if(!db||!currentUser)return;const batch=writeBatch(db);clients.forEach((c,i)=>batch.update(doc(db,dataRoot(),'clients',c.id),{order:i}));await batch.commit();}
-async function savePost(dateKey,post){if(!db||!currentUser)return;const data={...post,date:dateKey};if(state.currentWorkspace)data.addedBy={uid:currentUser.uid,displayName:currentUser.displayName||currentUser.email,photoURL:currentUser.photoURL||null};await setDoc(doc(db,dataRoot(),'posts',post.id),data);}
-async function removePost(postId){if(!db||!currentUser)return;await deleteDoc(doc(db,dataRoot(),'posts',postId));}
-async function updatePostField(postId,fields){if(!db||!currentUser)return;await updateDoc(doc(db,dataRoot(),'posts',postId),fields);}
-async function saveCT(ct){if(!db||!currentUser)return;await setDoc(doc(db,dataRoot(),'contentTypes',ct.id),ct);}
-async function removeCT(ctId){if(!db||!currentUser)return;await deleteDoc(doc(db,dataRoot(),'contentTypes',ctId));}
-async function saveST(st){if(!db||!currentUser)return;await setDoc(doc(db,dataRoot(),'postStatuses',st.id),st);}
-async function removeST(stId){if(!db||!currentUser)return;await deleteDoc(doc(db,dataRoot(),'postStatuses',stId));}
-async function savePlat(plat){if(!db||!currentUser)return;await setDoc(doc(db,dataRoot(),'platforms',plat.id),plat);}
-async function removePlat(platId){if(!db||!currentUser)return;await deleteDoc(doc(db,dataRoot(),'platforms',platId));}
-
-// ─── Render All ─────────────────────────────────────────────────────────────────
-function renderAll(){
-  renderCalendar();renderSidebar();renderStatusFilterBar();saveNav();
-  if(document.getElementById('clientsOverlay').classList.contains('open'))renderClientsManager();
-  if(document.getElementById('ctOverlay').classList.contains('open'))renderCTManager();
-  if(document.getElementById('settingsOverlay').classList.contains('open')){renderPlatManager();renderSTManager();}
-  if(activeDayKey&&document.getElementById('dayOverlay').classList.contains('open')){renderDayModalPosts();renderClientDd();renderTypeGrid();populatePlatformSelect();populateStatusSelect(document.getElementById('newPostStatus'),state.form.status);updateTimeSuggestions();}
-}
-
-// ─── Workspace Switcher ─────────────────────────────────────────────────────────
-function renderWorkspaceSwitcher(){
-  const list=document.getElementById('wsDdList'),btnName=document.getElementById('wsBtnName'),btnIcon=document.getElementById('wsBtnIcon'),badge=document.getElementById('wsBadge');
-  if(!list)return;
-  const isP=!state.currentWorkspace;
-  btnName.textContent=isP?'Pessoal':state.currentWorkspace.name;
-  const wsLogo=state.currentWorkspace?.logo;
-  btnIcon.innerHTML=wsLogo?`<img class="ws-logo-sm" src="${wsLogo}" alt=""/>`:isP?'📅':'🏢';
-  const totalPending=state.userWorkspaces.reduce((n,w)=>n+(w.pendingCount||0),0);
-  if(totalPending>0){badge.textContent=totalPending;badge.style.display='flex';}else badge.style.display='none';
-  let html=`<div class="ws-dd-item ${isP?'active':''}" id="dd-personal"><span class="ws-dd-item-icon">📅</span><div class="ws-dd-item-info"><div class="ws-dd-item-name">Pessoal</div><div class="ws-dd-item-sub">Só você</div></div></div>`;
-  if(state.userWorkspaces.length)html+='<div class="ws-dd-sep"></div>';
-  state.userWorkspaces.forEach(ws=>{
-    const active=state.currentWorkspace?.id===ws.id,pending=ws.pendingCount||0;
-    const iconHtml=ws.logo?`<img src="${ws.logo}" alt="" style="width:22px;height:22px;object-fit:cover;border-radius:5px"/>`:'🏢';
-    html+=`<div class="ws-dd-item ${active?'active':''}" id="dd-ws-${ws.id}"><span class="ws-dd-item-icon">${iconHtml}</span><div class="ws-dd-item-info"><div class="ws-dd-item-name">${ws.name}</div><div class="ws-dd-item-sub">${ws.role} · ${(ws.memberUids||[]).length} membros</div></div>${pending>0?`<span class="ws-dd-item-badge">${pending}</span>`:''}</div>`;
-  });
-  list.innerHTML=html;
-  document.getElementById('dd-personal').addEventListener('click',()=>switchWorkspace(null));
-  state.userWorkspaces.forEach(ws=>document.getElementById(`dd-ws-${ws.id}`)?.addEventListener('click',()=>switchWorkspace(ws)));
-}
-function closeWsDropdown(){document.getElementById('wsDropdown').classList.remove('open');}
-
-// ─── Status Filter Bar (top) ────────────────────────────────────────────────────
-function renderStatusFilterBar(){
-  const bar=document.getElementById('statusFilterBar');
-  const mk=`${state.year}-${String(state.month).padStart(2,'0')}`;
-  const counts={};state.postStatuses.forEach(s=>{counts[s.id]=0;});
-  let total=0;
-  Object.entries(state.posts).forEach(([k,arr])=>{if(k.startsWith(mk))arr.forEach(p=>{const sid=p.status||'draft';total++;if(counts[sid]!==undefined)counts[sid]++;});});
-  let html=`<span class="filter-label">Status:</span><div class="filter-chip ${!state.filterStatus?'active-all':''}" data-id="">Todos <span style="opacity:.6">(${total})</span></div><div class="filter-sep"></div>`;
-  state.postStatuses.forEach(s=>{const isA=state.filterStatus===s.id;const stC=s.color||'#888';html+=`<div class="filter-chip ${isA?'active-status':''}" data-id="${s.id}" style="${isA?`color:${stC};border-color:${stC}`:''}">${s.icon} ${s.name} <span style="opacity:.6">(${counts[s.id]||0})</span></div>`;});
-  bar.innerHTML=html;
-  bar.querySelectorAll('.filter-chip').forEach(chip=>chip.addEventListener('click',()=>{const id=chip.dataset.id;state.filterStatus=(id&&id!==state.filterStatus)?id:null;renderCalendar();renderStatusFilterBar();}));
-}
-
-// ─── Sidebar ───────────────────────────────────────────────────────────────────
-function renderSidebar(){
-  // Clients
-  const cEl=document.getElementById('sidebarClients');
-  if(cEl){
-    const mk=`${state.year}-${String(state.month).padStart(2,'0')}`;
-    const counts={};state.clients.forEach(c=>{counts[c.id]=0;});
-    Object.entries(state.posts).forEach(([k,arr])=>{if(k.startsWith(mk))arr.forEach(p=>{if(counts[p.clientId]!==undefined)counts[p.clientId]++;});});
-    cEl.innerHTML=state.clients.length?state.clients.map(c=>`<div class="s-client-item"><span class="s-dot" style="background:${c.color}"></span><span class="s-name">${c.name}</span><span class="s-count">${counts[c.id]||0}</span></div>`).join(''):'<div class="s-empty">Nenhum cliente ainda</div>';
-  }
-  // Content types
-  const ctEl=document.getElementById('sidebarCT');
-  if(ctEl) ctEl.innerHTML=state.contentTypes.map(ct=>`<div class="ct-row-sb"><span class="ico">${ct.icon}</span>${ct.name}<span class="ct-badge-sb" style="background:${ct.bgColor}20;color:${ct.bgColor}">${ct.label}</span></div>`).join('');
-  // Sidebar filter dropdowns
-  renderSidebarFilters();
-}
-
-function renderSidebarFilters(){
-  const cSel=document.getElementById('filterSelClient'),ctSel=document.getElementById('filterSelCT'),pSel=document.getElementById('filterSelPlatform');
-  if(!cSel||!ctSel||!pSel)return;
-  cSel.innerHTML=`<option value="">Todos os clientes</option>`+state.clients.map(c=>`<option value="${c.id}" ${state.filterClientId===c.id?'selected':''}>${c.name}</option>`).join('');
-  ctSel.innerHTML=`<option value="">Todos os tipos</option>`+state.contentTypes.map(t=>`<option value="${t.id}" ${state.filterContentType===t.id?'selected':''}>${t.icon} ${t.name}</option>`).join('');
-  pSel.innerHTML=`<option value="">Todas as plataformas</option>`+state.platforms.map(p=>`<option value="${p.id}" ${state.filterPlatform===p.id?'selected':''}>${p.icon} ${p.name}</option>`).join('');
-  // Show active hint
-  const hasFilter=state.filterClientId||state.filterContentType||state.filterPlatform;
-  const hint=document.getElementById('filterActiveHint');
-  if(hint)hint.style.display=hasFilter?'flex':'none';
-}
-
-// ─── Calendar ──────────────────────────────────────────────────────────────────
-function renderCalendar(){
-  const grid=document.getElementById('calGrid');if(!grid)return;
-  const{year,month}=state;
-  const firstDay=new Date(year,month-1,1).getDay(),daysInMonth=new Date(year,month,0).getDate();
-  const today=new Date(),isThisM=today.getFullYear()===year&&today.getMonth()+1===month;
-  const lbl=document.getElementById('monthLbl');if(lbl)lbl.innerHTML=`${MONTHS[month-1]} <em>${year}</em>`;
-  let html='';
-  for(let i=0;i<firstDay;i++){const pm=month===1?12:month-1,py=month===1?year-1:year,dp=new Date(py,pm,0).getDate();html+=`<div class="day-cell outside"><div class="day-color-bar"></div><div class="day-num">${dp-firstDay+1+i}</div></div>`;}
-  for(let d=1;d<=daysInMonth;d++){
-    const key=dk(year,month,d),dayPosts=state.posts[key]||[],isToday=isThisM&&today.getDate()===d;
-    // Apply all filters
-    let visible=dayPosts;
-    if(state.filterClientId)visible=visible.filter(p=>p.clientId===state.filterClientId);
-    if(state.filterContentType)visible=visible.filter(p=>p.contentType===state.filterContentType||getCT(p.contentType)?.id===state.filterContentType);
-    if(state.filterPlatform)visible=visible.filter(p=>p.platform===state.filterPlatform);
-    if(state.filterStatus)visible=visible.filter(p=>(p.status||'draft')===state.filterStatus);
-    const hasFilter=state.filterClientId||state.filterContentType||state.filterPlatform||state.filterStatus;
-    const filtered=hasFilter?(visible.length>0?'f-hi':'f-dim'):'';
-    const usedIds=[...new Set(visible.map(p=>p.clientId))];
-    const gradient=buildGradient(usedIds.map(id=>getC(id)?.color).filter(Boolean));
-    const maxShow=3,shown=visible.slice(0,maxShow),extra=visible.length-maxShow;
-    const tagsHtml=shown.map(p=>{const cl=getC(p.clientId),ct=getCT(p.contentType);if(!cl)return'';const st=getST(p.status||'draft');return`<div class="cp-tag" style="background:${cl.color}"><div class="cp-tag-line1">${cl.name} <span class="cp-tag-type">[${ct?ct.label:p.contentType}]</span><span class="cp-tag-st" style="background:${st.color}" title="${st.name}"></span></div>${p.note?`<div class="cp-tag-note">${p.note}</div>`:''}</div>`;}).join('');
-    html+=`<div class="day-cell${isToday?' today':''}${filtered?' '+filtered:''}" id="dc_${key}"><div class="day-color-bar" style="background:${gradient}"></div><div class="day-num">${d}</div><div class="day-posts-wrap">${tagsHtml}${extra>0?`<div class="cp-more">+${extra} mais</div>`:''}${dayPosts.length===0?`<div class="cp-empty">+</div>`:''}</div></div>`;
-  }
-  const total=firstDay+daysInMonth,pad=total%7===0?0:7-(total%7);
-  for(let i=1;i<=pad;i++)html+=`<div class="day-cell outside"><div class="day-color-bar"></div><div class="day-num">${i}</div></div>`;
-  grid.innerHTML=html;
-  for(let d=1;d<=daysInMonth;d++){const cell=document.getElementById(`dc_${dk(year,month,d)}`);if(cell)cell.addEventListener('click',()=>openDayModal(year,month,d));}
-}
-
-// ─── Sidebar filter events ──────────────────────────────────────────────────────
-document.getElementById('filterSelClient').addEventListener('change',e=>{state.filterClientId=e.target.value||null;renderCalendar();renderSidebarFilters();});
-document.getElementById('filterSelCT').addEventListener('change',e=>{state.filterContentType=e.target.value||null;renderCalendar();renderSidebarFilters();});
-document.getElementById('filterSelPlatform').addEventListener('change',e=>{state.filterPlatform=e.target.value||null;renderCalendar();renderSidebarFilters();});
-document.getElementById('btnClearFilters').addEventListener('click',()=>{state.filterClientId=null;state.filterContentType=null;state.filterPlatform=null;renderCalendar();renderSidebarFilters();});
-
-// ─── Day Modal ─────────────────────────────────────────────────────────────────
-let activeDayKey=null;
-function openDayModal(y,m,d){
-  activeDayKey=dk(y,m,d);state.form={selectedClients:[],selectedType:null,status:'draft',scheduledTime:'',platform:''};
-  const dow=new Date(y,m-1,d).getDay();
-  document.getElementById('dayModalTitle').textContent=`${DAYS[dow]}, ${d} de ${MONTHS[m-1]}`;
-  document.getElementById('dayModalSub').textContent=`${y}`;
-  document.getElementById('noteInput').value='';
-  document.getElementById('newPostTime').value='';
-  document.getElementById('inlineAddForm').style.display='none';
-  document.getElementById('addPostSection').style.display=canEdit()?'':'none';
-  clientDdOpen=false;platDdOpen=false;
-  renderDayModalPosts();renderClientDd();renderTypeGrid();renderPlatDd();
-  populateStatusSelect(document.getElementById('newPostStatus'),'draft');
-  updateTimeSuggestions();updateAddBtn();
-  document.getElementById('dayOverlay').classList.add('open');
-}
-function closeDayModal(){document.getElementById('dayOverlay').classList.remove('open');activeDayKey=null;clientDdOpen=false;platDdOpen=false;}
-
-function renderDayModalPosts(){
-  const list=document.getElementById('postsList'),noMsg=document.getElementById('noPostsMsg');
-  const posts=state.posts[activeDayKey]||[];
-  if(!posts.length){list.innerHTML='';noMsg.style.display='block';return;}
-  noMsg.style.display='none';
-  list.innerHTML=posts.map((p,idx)=>{
-    const cl=getC(p.clientId),ct=getCT(p.contentType);if(!cl)return'';
-    const st=getST(p.status||'draft'),plat=getPlat(p.platform);
-    const ctStyle=ct?`background:${ct.bgColor}25;color:${ct.bgColor}`:'background:rgba(255,255,255,0.1);color:var(--muted)';
-    const platBadge=plat?`<span class="post-badge" style="background:${plat.color}20;color:${plat.color}">${plat.icon} ${plat.name}</span>`:'';
-    const timeHtml=p.scheduledTime?`<span class="post-time">🕐 ${p.scheduledTime}</span>`:'';
-    const noteHtml=p.note?`<div class="post-note">💬 ${p.note}</div>`:'';
-    const creatorHtml=p.addedBy&&state.currentWorkspace?`<div class="post-creator"><img class="post-creator-avatar" src="${p.addedBy.photoURL||''}" onerror="this.style.display='none'" alt=""/><span>${p.addedBy.displayName}</span></div>`:'';
-    const statusOpts=state.postStatuses.map(s=>`<option value="${s.id}" ${(p.status||'draft')===s.id?'selected':''}>${s.icon} ${s.name}</option>`).join('');
-    const actionBtns=canEdit()?`<button class="btn-post-action" data-action="edit" data-idx="${idx}" title="Editar anotação">✏️</button><button class="btn-post-action del" data-action="del" data-idx="${idx}" title="Remover">🗑</button>`:'';
-    return`<div class="post-item" id="pi_${p.id}">
-      <span class="post-colordot" style="background:${cl.color}"></span>
-      <div class="post-info">
-        <div class="post-cname">${cl.name}</div>
-        <div class="post-badges">
-          <span class="post-badge" style="${ctStyle}">${ct?ct.icon:''} ${ct?ct.label:p.contentType}</span>
-          ${platBadge}
-          ${canEdit()?`<select class="post-status-sel" data-postid="${p.id}" data-idx="${idx}" style="background:${st.color}18;color:${st.color}">${statusOpts}</select>`:`<span class="post-badge" style="background:${st.color}18;color:${st.color}">${st.icon} ${st.name}</span>`}
-          ${timeHtml}
+    <div class="proj-form-grid">
+      <div class="proj-form-field">
+        <label class="proj-field-label" data-i18n="tasks.priority">Prioridade</label>
+        <div class="nsel-wrap" id="taskPriorityWrap">
+          <div class="nsel-btn" id="taskPriorityBtn"><span class="nsel-label" id="taskPriorityLabel"></span><span class="nsel-arrow">▾</span></div>
+          <div class="nsel-menu" id="taskPriorityMenu"></div>
         </div>
-        ${noteHtml}
-        <div class="inline-note-edit" id="noteEdit_${p.id}" style="display:none"></div>
-        ${creatorHtml}
       </div>
-      <div class="post-actions">${actionBtns}</div>
-    </div>`;
-  }).join('');
+      <div class="proj-form-field">
+        <label class="proj-field-label" data-i18n="tasks.dueDate">Data (opcional)</label>
+        <input class="proj-field-input" type="date" id="taskDueDate"/>
+      </div>
+    </div>
 
-  list.querySelectorAll('.post-status-sel').forEach(sel=>{
-    sel.addEventListener('change',async()=>{
-      const idx=parseInt(sel.dataset.idx),dp=state.posts[activeDayKey]||[],post=dp[idx];if(!post)return;
-      post.status=sel.value;const st=getST(sel.value);sel.style.background=`${st.color}18`;sel.style.color=st.color;
-      await updatePostField(post.id,{status:sel.value});renderStatusFilterBar();renderCalendar();
-    });
-  });
-  list.querySelectorAll('.btn-post-action').forEach(btn=>{
-    btn.addEventListener('click',async()=>{
-      const idx=parseInt(btn.dataset.idx),dp=state.posts[activeDayKey]||[],post=dp[idx];if(!post)return;
-      if(btn.dataset.action==='del'){
-        await removePost(post.id);dp.splice(idx,1);
-        if(!dp.length)delete state.posts[activeDayKey];else state.posts[activeDayKey]=dp;
-        renderDayModalPosts();renderAll();toast('🗑 Postagem removida');
-      }else if(btn.dataset.action==='edit'){
-        const editDiv=document.getElementById(`noteEdit_${post.id}`);
-        if(editDiv.style.display==='none'){
-          editDiv.innerHTML=`<textarea class="inline-note-ta" id="noteTA_${post.id}">${post.note||''}</textarea><div class="inline-note-actions"><button class="btn-note-save" data-postid="${post.id}">💾 Salvar</button><button class="btn-note-cancel" data-postid="${post.id}">✕ Cancelar</button></div>`;
-          editDiv.style.display='block';
-          editDiv.querySelector('.btn-note-save').addEventListener('click',async()=>{const n=document.getElementById(`noteTA_${post.id}`).value.trim();post.note=n;await updatePostField(post.id,{note:n});renderDayModalPosts();renderAll();toast('✅ Anotação atualizada!');});
-          editDiv.querySelector('.btn-note-cancel').addEventListener('click',()=>{editDiv.style.display='none';editDiv.innerHTML='';});
-        }else{editDiv.style.display='none';editDiv.innerHTML='';}
-      }
-    });
-  });
-}
+    <div class="proj-form-field full">
+      <label class="proj-field-label" data-i18n="tasks.desc">Descrição</label>
+      <textarea class="proj-field-input" id="taskDesc" rows="2" placeholder="Detalhes da tarefa..." data-i18n-placeholder="tasks.descPlaceholder" maxlength="500"></textarea>
+    </div>
 
-// Client Dropdown
-function renderClientDd(){
-  const menu=document.getElementById('cddMenu'),selItems=document.getElementById('cddSelItems'),btn=document.getElementById('cddBtn');
-  const sel=state.form.selectedClients;
-  if(!sel.length)selItems.innerHTML=`<span class="cdd-placeholder">Selecionar Cliente / Rede Social</span>`;
-  else selItems.innerHTML=sel.map(id=>{const cl=getC(id);return cl?`<span class="cdd-sel-pill" style="background:${cl.color}20;color:${cl.color}">● ${cl.name}</span>`:''}).join('');
-  btn.classList.toggle('open',clientDdOpen);
-  const opts=state.clients.map(c=>`<div class="cdd-opt${sel.includes(c.id)?' sel':''}" data-id="${c.id}"><span class="cdd-check">${sel.includes(c.id)?'✓':''}</span><span class="cdd-dot-opt" style="background:${c.color}"></span><span class="cdd-opt-name">${c.name}</span></div>`).join('');
-  menu.innerHTML=`${state.clients.length?opts:'<div style="padding:10px 13px;font-size:12px;color:var(--dim)">Nenhum cliente</div>'}<div class="cdd-sep"></div><div class="cdd-new" id="cddNewLink">+ Novo Cliente</div>`;
-  menu.classList.toggle('open',clientDdOpen);
-  menu.querySelectorAll('.cdd-opt').forEach(opt=>{
-    opt.addEventListener('click',e=>{e.stopPropagation();const id=opt.dataset.id;const idx=sel.indexOf(id);if(idx>=0)sel.splice(idx,1);else sel.push(id);renderClientDd();updateAddBtn();updateTimeSuggestions();});
-  });
-  document.getElementById('cddNewLink')?.addEventListener('click',()=>{document.getElementById('inlineAddForm').style.display='block';clientDdOpen=false;renderClientDd();});
-}
+    <div class="proj-form-field full">
+      <label class="proj-field-label" data-i18n="pm.checklist">Checklist</label>
+      <div class="proj-checklist-wrap" id="taskChecklistWrap"></div>
+      <div style="display:flex;gap:7px;margin-top:6px">
+        <input class="proj-field-input" id="taskChecklistInput" placeholder="Adicionar item..." data-i18n-placeholder="tasks.checklistPlaceholder" maxlength="120" style="flex:1"/>
+        <button type="button" class="proj-check-add-btn" id="btnAddTaskChecklistItem" data-i18n="pm.addOwner">+ Adicionar</button>
+      </div>
+    </div>
 
-// Type grid
-function renderTypeGrid(){
-  const grid=document.getElementById('typeGrid');
-  grid.innerHTML=state.contentTypes.map(ct=>`<div class="topt${state.form.selectedType===ct.id?' sel':''}" data-id="${ct.id}"><span class="ico">${ct.icon}</span><span class="lbl">${ct.name}</span><span class="tbadge" style="border-color:${ct.bgColor};color:${ct.bgColor}">${ct.label}</span></div>`).join('');
-  grid.querySelectorAll('.topt').forEach(opt=>{
-    opt.addEventListener('click',()=>{grid.querySelectorAll('.topt').forEach(o=>o.classList.remove('sel'));opt.classList.add('sel');state.form.selectedType=opt.dataset.id;updateAddBtn();});
-  });
-}
+    <div class="task-modal-footer">
+      <button class="btn-danger-outline" id="btnDeleteTask" style="display:none" data-i18n="tasks.delete">Excluir Tarefa</button>
+      <div style="flex:1"></div>
+      <button class="proj-check-add-btn" id="btnCancelTask" data-i18n="common.cancel">Cancelar</button>
+      <button class="btn-new-proj" id="btnSaveTask" data-i18n="tasks.save">Salvar Tarefa</button>
+    </div>
+  </div>
+</div>
 
-// Platform custom dropdown (single-select, same style as client dd)
-function renderPlatDd(){
-  const menu=document.getElementById('platDdMenu'),selItems=document.getElementById('platDdSelItems'),btn=document.getElementById('platDdBtn');
-  if(!menu||!selItems||!btn)return;
-  const selId=state.form.platform;
-  const selPlat=getPlat(selId);
-  if(selPlat){
-    selItems.innerHTML=`<span class="cdd-sel-pill" style="background:${selPlat.color}20;color:${selPlat.color}">${selPlat.icon} ${selPlat.name}</span>`;
-  }else{
-    selItems.innerHTML=`<span class="cdd-placeholder">— Não especificada —</span>`;
-  }
-  btn.classList.toggle('open',platDdOpen);
-  const noneOpt=`<div class="cdd-opt${!selId?' sel':''}" data-platid=""><span class="cdd-dot-opt" style="background:rgba(255,255,255,0.15)"></span><span class="cdd-opt-name" style="color:var(--dim)">— Não especificada —</span></div>`;
-  const opts=state.platforms.map(p=>`<div class="cdd-opt${selId===p.id?' sel':''}" data-platid="${p.id}"><span class="cdd-dot-opt" style="background:${p.color}"></span><span class="cdd-opt-name">${p.icon} ${p.name}</span></div>`).join('');
-  menu.innerHTML=noneOpt+opts;
-  menu.classList.toggle('open',platDdOpen);
-  menu.querySelectorAll('.cdd-opt').forEach(opt=>{
-    opt.addEventListener('click',e=>{e.stopPropagation();state.form.platform=opt.dataset.platid;platDdOpen=false;renderPlatDd();});
-  });
-}
-document.getElementById('platDdBtn').addEventListener('click',e=>{e.stopPropagation();platDdOpen=!platDdOpen;renderPlatDd();});
+<!-- PROJETO MODAL -->
+<div class="overlay" id="projOverlay">
+  <div class="proj-modal" id="projModal">
+    <div class="proj-modal-accent" id="projModalAccent"></div>
+    <div class="proj-modal-body">
 
-// Status select
-function populateStatusSelect(sel,defaultVal){
-  if(!sel)return;
-  sel.innerHTML=state.postStatuses.map(s=>`<option value="${s.id}" ${s.id===defaultVal?'selected':''}>${s.icon} ${s.name}</option>`).join('');
-  const st=getST(defaultVal);if(st)sel.style.color=st.color;
-}
+      <!-- HEADER -->
+      <div class="proj-modal-hdr">
+        <input class="proj-modal-title-input" id="projTitleInput" placeholder="Nome do projeto..." maxlength="80" data-i18n-placeholder="pm.projectName"/>
+        <button class="btn-close" id="btnCloseProjModal" style="margin-left:10px;flex-shrink:0" title="Fechar" data-i18n-title="common.close">✕</button>
+      </div>
 
-// Smart time suggestions
-function getTimeSuggestions(){
-  const sel=state.form.selectedClients;if(!sel.length)return['09:00','12:00','18:00'];
-  const clientId=sel[0];
-  const hist=Object.values(state.posts).flat().filter(p=>p.clientId===clientId&&p.scheduledTime).map(p=>p.scheduledTime);
-  if(hist.length>=3){const freq={};hist.forEach(t=>{freq[t]=(freq[t]||0)+1;});return Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([t])=>t);}
-  // Use platform best times if client has a platform post
-  const platPosts=Object.values(state.posts).flat().filter(p=>p.clientId===clientId&&p.platform);
-  const mainPlatId=platPosts.length?platPosts[0].platform:null;
-  const times=mainPlatId&&PLATFORM_BEST_TIMES[mainPlatId]?PLATFORM_BEST_TIMES[mainPlatId]:['09:00','12:00','18:00'];
-  return times;
-}
-function updateTimeSuggestions(){
-  const wrap=document.getElementById('timeSuggestions');if(!wrap)return;
-  const sug=getTimeSuggestions();
-  const isHist=Object.values(state.posts).flat().filter(p=>state.form.selectedClients.includes(p.clientId)&&p.scheduledTime).length>=3;
-  wrap.innerHTML=sug.map(t=>`<span class="time-chip" data-t="${t}"><span class="time-chip-label">${isHist?'📊':'💡'}</span>${t}</span>`).join('');
-  wrap.querySelectorAll('.time-chip').forEach(chip=>chip.addEventListener('click',()=>{document.getElementById('newPostTime').value=chip.dataset.t;state.form.scheduledTime=chip.dataset.t;}));
-}
-function updateAddBtn(){const btn=document.getElementById('btnAddPost');if(btn)btn.disabled=!(state.form.selectedClients.length>0&&state.form.selectedType);}
+      <!-- GRID PRINCIPAL -->
+      <div class="proj-form-grid">
 
-// Client dropdown toggle
-document.getElementById('cddBtn').addEventListener('click',e=>{e.stopPropagation();clientDdOpen=!clientDdOpen;renderClientDd();});
+        <!-- CLIENTE (dropdown custom com criar inline) -->
+        <div class="proj-form-field">
+          <label class="proj-field-label" data-i18n="pm.client">Cliente</label>
+          <div class="pdd-wrap" id="projClientDd">
+            <div class="pdd-btn" id="projClientDdBtn">
+              <span class="pdd-sel-dot" id="projClientDdDot"></span>
+              <span class="pdd-sel-label" id="projClientDdLabel">Sem cliente</span>
+              <span class="pdd-arrow">▾</span>
+            </div>
+            <div class="pdd-menu" id="projClientDdMenu">
+              <div class="pdd-search-wrap"><input class="pdd-search" id="projClientSearch" placeholder="Buscar cliente..."/></div>
+              <div id="projClientDdOpts"></div>
+              <div class="pdd-sep"></div>
+              <div class="pdd-new-trigger" id="projClientNewTrigger">+ Criar novo cliente</div>
+              <div class="pdd-create-inline" id="projClientCreateForm" style="display:none">
+                <div style="display:flex;align-items:center;gap:6px;padding:10px 12px 4px">
+                  <input class="pdd-create-input" id="projClientNewName" placeholder="Nome do cliente..." maxlength="30"/>
+                  <div class="ncp-swatch" id="projClientColorSwatch" style="background:#edf252;width:32px;height:32px;border-radius:8px;border:2px solid var(--border);cursor:pointer;flex-shrink:0"></div>
+                </div>
+                <div style="padding:0 12px 10px;display:flex;gap:6px">
+                  <button class="pdd-create-btn" id="projClientCreateBtn">Criar</button>
+                  <button class="pdd-cancel-btn" id="projClientCancelBtn">Cancelar</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Campo freelancer (aparece ao selecionar Freelancer/Avulso) -->
+        <div id="projFreelancerForm" style="display:none;align-items:center;gap:7px;margin-top:6px;grid-column:1/-1">
+          <span style="font-size:18px">👤</span>
+          <input class="proj-field-input" id="projFreelancerName" placeholder="Nome do cliente avulso (não salvo na agenda)..." maxlength="50" style="flex:1"/>
+        </div>
 
-// Add post
-document.getElementById('btnAddPost').addEventListener('click',async()=>{
-  if(!state.form.selectedClients.length||!state.form.selectedType)return;
-  const note=document.getElementById('noteInput').value.trim();
-  const time=document.getElementById('newPostTime').value||null;
-  const status=document.getElementById('newPostStatus').value||'draft';
-  const platform=state.form.platform||null;
-  if(!state.posts[activeDayKey])state.posts[activeDayKey]=[];
-  const newPosts=state.form.selectedClients.map(clientId=>({id:uid(),clientId,contentType:state.form.selectedType,note,scheduledTime:time,status,platform}));
-  for(const post of newPosts){state.posts[activeDayKey].push(post);await savePost(activeDayKey,post);}
-  state.form={selectedClients:[],selectedType:null,status:'draft',scheduledTime:'',platform:''};
-  document.getElementById('noteInput').value='';document.getElementById('newPostTime').value='';
-  clientDdOpen=false;platDdOpen=false;renderClientDd();renderTypeGrid();renderPlatDd();
-  populateStatusSelect(document.getElementById('newPostStatus'),'draft');
-  renderDayModalPosts();renderAll();toast('✅ Postagem adicionada!');
-});
+        <!-- STATUS (dropdown custom com criar inline) -->
+        <div class="proj-form-field">
+          <label class="proj-field-label" data-i18n="pm.status">Status</label>
+          <div class="pdd-wrap" id="projStatusDd">
+            <div class="pdd-btn" id="projStatusDdBtn">
+              <span class="pdd-sel-dot" id="projStatusDdDot"></span>
+              <span class="pdd-sel-label" id="projStatusDdLabel">Contato</span>
+              <span class="pdd-arrow">▾</span>
+            </div>
+            <div class="pdd-menu" id="projStatusDdMenu">
+              <div id="projStatusDdOpts"></div>
+              <div class="pdd-sep"></div>
+              <div class="pdd-new-trigger" id="projStatusNewTrigger">+ Criar novo status</div>
+              <div class="pdd-create-inline" id="projStatusCreateForm" style="display:none">
+                <div style="display:flex;align-items:center;gap:6px;padding:10px 12px 4px">
+                  <input class="pdd-create-input" id="projStatusNewIcon" placeholder="Emoji" maxlength="2" style="width:44px;text-align:center"/>
+                  <input class="pdd-create-input" id="projStatusNewName" placeholder="Nome do status..." maxlength="30" style="flex:1"/>
+                  <div class="ncp-swatch" id="projStatusColorSwatch" style="background:#74b9ff;width:32px;height:32px;border-radius:8px;border:2px solid var(--border);cursor:pointer;flex-shrink:0"></div>
+                </div>
+                <div style="padding:0 12px 10px;display:flex;gap:6px">
+                  <button class="pdd-create-btn" id="projStatusCreateBtn">Criar</button>
+                  <button class="pdd-cancel-btn" id="projStatusCancelBtn">Cancelar</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-document.getElementById('btnCloseDayModal').addEventListener('click',closeDayModal);
-document.getElementById('dayOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeDayModal();});
+        <!-- DATA DE INICIO -->
+        <div class="proj-form-field">
+          <label class="proj-field-label" data-i18n="pm.startDate">Data de Início</label>
+          <input class="proj-field-input" type="date" id="projStartDate"/>
+        </div>
 
-// Inline add client
-const inlineColor=document.getElementById('inlineClientColor'),inlineHex=document.getElementById('inlineClientHex'),inlineThumb=document.getElementById('inlineColorThumb');
-inlineColor.addEventListener('input',()=>{inlineHex.value=inlineColor.value.toUpperCase();inlineThumb.style.background=inlineColor.value;});
-inlineHex.addEventListener('input',()=>{let v=inlineHex.value;if(!v.startsWith('#'))v='#'+v;if(/^#[0-9a-fA-F]{6}$/.test(v)){inlineColor.value=v;inlineThumb.style.background=v;}});
-inlineThumb.style.background=inlineColor.value;
-document.getElementById('btnSaveInlineClient').addEventListener('click',async()=>{
-  const name=document.getElementById('inlineClientName').value.trim();if(!name){toast('⚠️ Digite o nome');return;}
-  let color=inlineHex.value;if(!color.startsWith('#'))color='#'+color;if(!/^#[0-9a-fA-F]{6}$/.test(color))color='#edf252';
-  const cl={id:uid(),name,color,order:state.clients.length};state.clients.push(cl);await saveClient(cl);
-  document.getElementById('inlineClientName').value='';document.getElementById('inlineAddForm').style.display='none';
-  renderClientDd();renderAll();toast(`✅ "${name}" criado!`);
-});
+        <!-- PRAZO -->
+        <div class="proj-form-field">
+          <label class="proj-field-label" data-i18n="pm.deadline">Prazo de Entrega</label>
+          <input class="proj-field-input" type="date" id="projDeadline"/>
+        </div>
 
-// ─── Clients Modal ─────────────────────────────────────────────────────────────
-function openClientsModal(){
-  const sub=document.getElementById('clientsModalSub');if(sub)sub.textContent=state.currentWorkspace?`Workspace: ${state.currentWorkspace.name}`:'Calendário Pessoal';
-  renderClientsManager();document.getElementById('clientsOverlay').classList.add('open');
-}
-function closeClientsModal(){document.getElementById('clientsOverlay').classList.remove('open');}
+        <!-- PRIORIDADE (dropdown custom) -->
+        <div class="proj-form-field">
+          <label class="proj-field-label" data-i18n="pm.priority">Prioridade</label>
+          <div class="pdd-wrap" id="projPriorityDd">
+            <div class="pdd-btn" id="projPriorityDdBtn">
+              <span class="pdd-sel-dot" id="projPriorityDdDot"></span>
+              <span class="pdd-sel-label" id="projPriorityDdLabel">🟡 Normal</span>
+              <span class="pdd-arrow">▾</span>
+            </div>
+            <div class="pdd-menu" id="projPriorityDdMenu">
+              <div class="pdd-opt" data-pval="high" data-pcolor="#ff4d4d">🔴 Alta</div>
+              <div class="pdd-opt" data-pval="normal" data-pcolor="#ffa502">🟡 Normal</div>
+              <div class="pdd-opt" data-pval="low" data-pcolor="#2ed573">🟢 Baixa</div>
+            </div>
+          </div>
+        </div>
 
-function renderClientsManager(){
-  const el=document.getElementById('clientsManager');if(!el)return;
-  if(!state.clients.length){el.innerHTML='<div class="s-empty" style="padding:8px 0">Nenhum cliente. Crie abaixo!</div>';return;}
-  el.innerHTML=state.clients.map((c,idx)=>`
-    <div class="cm-item" id="cmRow_${c.id}">
-      <div class="reorder-btns"><button class="btn-reorder" data-dir="up" data-id="${c.id}" ${idx===0?'disabled style="opacity:0.3"':''}>↑</button><button class="btn-reorder" data-dir="dn" data-id="${c.id}" ${idx===state.clients.length-1?'disabled style="opacity:0.3"':''}>↓</button></div>
-      <div class="cm-swatch" style="background:${c.color}"><input type="color" value="${c.color}" class="cm-color-pick" data-id="${c.id}"/></div>
-      <input class="cm-name" value="${c.name}" data-id="${c.id}" maxlength="30"/>
-      <input class="cm-hex" value="${c.color.toUpperCase()}" data-id="${c.id}" maxlength="7"/>
-      <button class="btn-cm-save" data-id="${c.id}">Salvar</button>
-      <button class="btn-cm-del" data-id="${c.id}">🗑</button>
-    </div>`).join('');
+        <!-- SERVIÇOS -->
+        <div class="proj-form-field full">
+          <label class="proj-field-label" data-i18n="pm.services">Serviço(s)</label>
+          <div class="proj-service-chips" id="projServiceChips"></div>
+        </div>
 
-  el.querySelectorAll('.btn-reorder').forEach(btn=>{
-    btn.addEventListener('click',async()=>{
-      const id=btn.dataset.id,dir=btn.dataset.dir,idx=state.clients.findIndex(c=>c.id===id);if(idx<0)return;
-      const si=dir==='up'?idx-1:idx+1;if(si<0||si>=state.clients.length)return;
-      const tmp=state.clients[idx];state.clients[idx]=state.clients[si];state.clients[si]=tmp;
-      state.clients.forEach((c,i)=>c.order=i);await updateClientOrder(state.clients);
-      renderClientsManager();renderAll();
-    });
-  });
-  el.querySelectorAll('.cm-color-pick').forEach(pick=>{pick.addEventListener('input',()=>{const row=document.getElementById(`cmRow_${pick.dataset.id}`);row.querySelector('.cm-hex').value=pick.value.toUpperCase();pick.closest('.cm-swatch').style.background=pick.value;});});
-  el.querySelectorAll('.cm-hex').forEach(hi=>{hi.addEventListener('input',()=>{let v=hi.value;if(!v.startsWith('#'))v='#'+v;if(/^#[0-9a-fA-F]{6}$/.test(v)){const row=document.getElementById(`cmRow_${hi.dataset.id}`);const pick=row.querySelector('.cm-color-pick');pick.value=v;pick.closest('.cm-swatch').style.background=v;}});});
-  el.querySelectorAll('.btn-cm-save').forEach(btn=>{btn.addEventListener('click',async()=>{const id=btn.dataset.id,row=document.getElementById(`cmRow_${id}`),cl=state.clients.find(c=>c.id===id);if(!cl)return;cl.name=row.querySelector('.cm-name').value.trim()||cl.name;cl.color=row.querySelector('.cm-color-pick').value;await saveClient(cl);renderAll();toast('✅ Cliente atualizado!');});});
-  el.querySelectorAll('.btn-cm-del').forEach(btn=>{btn.addEventListener('click',async()=>{const id=btn.dataset.id,cl=state.clients.find(c=>c.id===id);if(!confirm(`Deletar "${cl?.name}"?`))return;await removeClient(id);state.clients=state.clients.filter(c=>c.id!==id);Object.keys(state.posts).forEach(k=>{state.posts[k]=state.posts[k].filter(p=>p.clientId!==id);if(!state.posts[k].length)delete state.posts[k];});if(state.filterClientId===id)state.filterClientId=null;renderClientsManager();renderAll();toast('🗑 Cliente removido');});});
-}
+        <!-- DESCRIÇÃO -->
+        <div class="proj-form-field full">
+          <label class="proj-field-label" data-i18n="pm.desc">Descrição / Briefing</label>
+          <textarea class="proj-field-textarea" id="projDesc" placeholder="O que foi combinado com o cliente..."></textarea>
+        </div>
 
-const newColorPick=document.getElementById('newClientColor'),newHexInput=document.getElementById('newClientHex'),newSwatchW=document.getElementById('newColorSwatchWrap');
-newColorPick.addEventListener('input',()=>{newHexInput.value=newColorPick.value.toUpperCase();newSwatchW.style.background=newColorPick.value;});
-newHexInput.addEventListener('input',()=>{let v=newHexInput.value;if(!v.startsWith('#'))v='#'+v;if(/^#[0-9a-fA-F]{6}$/.test(v)){newColorPick.value=v;newSwatchW.style.background=v;}});
-newSwatchW.style.background=newColorPick.value;
-document.getElementById('btnCreateClient').addEventListener('click',async()=>{
-  const name=document.getElementById('newClientName').value.trim();if(!name){toast('⚠️ Digite o nome');return;}
-  let color=newHexInput.value;if(!color.startsWith('#'))color='#'+color;if(!/^#[0-9a-fA-F]{6}$/.test(color))color='#edf252';
-  const cl={id:uid(),name,color,order:state.clients.length};state.clients.push(cl);await saveClient(cl);
-  document.getElementById('newClientName').value='';renderClientsManager();renderAll();toast(`✅ "${name}" criado!`);
-});
-['btnManageSide','fabClients'].forEach(id=>document.getElementById(id)?.addEventListener('click',openClientsModal));
-document.getElementById('btnCloseClientsModal').addEventListener('click',closeClientsModal);
-document.getElementById('clientsOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeClientsModal();});
+        <!-- RESPONSÁVEIS (múltiplos) -->
+        <div class="proj-form-field full">
+          <label class="proj-field-label" data-i18n="pm.owners">Responsáveis</label>
+          <div class="proj-owners-wrap" id="projOwnersWrap"></div>
+          <div style="display:flex;gap:7px;margin-top:6px">
+            <input class="proj-field-input" id="projOwnerInput" placeholder="Nome do responsável..." maxlength="40" style="flex:1" data-i18n-placeholder="pm.ownerNamePlaceholder"/>
+            <button type="button" class="proj-check-add-btn" id="btnPickOwnerMember" title="Escolher do workspace" data-i18n-title="pm.pickWorkspaceMember">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </button>
+            <button type="button" class="proj-check-add-btn" id="btnAddOwner" data-i18n="pm.addOwner">+ Adicionar</button>
+          </div>
+        </div>
 
-// ─── Content Types Modal ───────────────────────────────────────────────────────
-function openCTModal(){renderCTManager();document.getElementById('ctOverlay').classList.add('open');}
-function closeCTModal(){document.getElementById('ctOverlay').classList.remove('open');}
+        <!-- ANOTAÇÕES -->
+        <div class="proj-form-field">
+          <label class="proj-field-label" data-i18n="pm.notes">Anotações internas</label>
+          <input class="proj-field-input" id="projNotes" placeholder="Apenas para a equipe ver..." maxlength="120"/>
+        </div>
+      </div>
 
-function renderCTManager(){
-  const el=document.getElementById('ctManager');if(!el)return;
-  el.innerHTML=state.contentTypes.map((ct,idx)=>`
-    <div class="ct-item" id="ctRow_${ct.id}">
-      <div class="reorder-btns"><button class="btn-reorder btn-ct-up" data-id="${ct.id}" ${idx===0?'disabled style="opacity:0.3"':''}>↑</button><button class="btn-reorder btn-ct-dn" data-id="${ct.id}" ${idx===state.contentTypes.length-1?'disabled style="opacity:0.3"':''}>↓</button></div>
-      <input class="ct-icon-input" type="text" value="${ct.icon}" data-id="${ct.id}" maxlength="2"/>
-      <input class="ct-name-input" type="text" value="${ct.name}" data-id="${ct.id}" maxlength="20" placeholder="Nome"/>
-      <input class="ct-label-input" type="text" value="${ct.label}" data-id="${ct.id}" maxlength="12" placeholder="BADGE"/>
-      <div class="ct-color-pick" style="background:${ct.bgColor}" data-id="${ct.id}"><input type="color" value="${ct.bgColor}"/></div>
-      <button class="btn-ct-save" data-id="${ct.id}">Salvar</button>
-      <button class="btn-ct-del" data-id="${ct.id}">🗑</button>
-    </div>`).join('');
+      <!-- PAGAMENTO -->
+      <div class="proj-payment-section">
+        <div class="proj-payment-hdr">
+          <div>
+            <div class="proj-field-label" data-i18n="pm.payment">Pagamento</div>
+            <div class="proj-payment-total" id="projPayTotal">R$ 0,00</div>
+            <div class="proj-payment-received" id="projPayReceived">R$ 0,00 recebidos</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="proj-field-label" data-i18n="pm.totalValue">Valor total</span>
+              <input class="proj-field-input" type="number" id="projValue" placeholder="0,00" min="0" step="0.01" style="width:120px;text-align:right"/>
+            </div>
+            <!-- FORMA PAGAMENTO (dropdown custom) -->
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="proj-field-label" data-i18n="pm.paymentMode">Forma</span>
+              <div class="pdd-wrap" id="projPayModeDd" style="min-width:160px">
+                <div class="pdd-btn" id="projPayModeDdBtn">
+                  <span class="pdd-sel-label" id="projPayModeDdLabel">50% + 50%</span>
+                  <span class="pdd-arrow">▾</span>
+                </div>
+                <div class="pdd-menu pdd-menu-right" id="projPayModeDdMenu">
+                  <div class="pdd-opt" data-pmval="avista">💳 À vista</div>
+                  <div class="pdd-opt" data-pmval="5050">✂️ 50% + 50%</div>
+                  <div class="pdd-opt" data-pmval="2x">📅 2x parcelado</div>
+                  <div class="pdd-opt" data-pmval="3x">📅 3x parcelado</div>
+                  <div class="pdd-opt" data-pmval="custom">✏️ Personalizado</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="proj-parcelas" id="projParcelas"></div>
+      </div>
 
-  el.querySelectorAll('.btn-ct-up,.btn-ct-dn').forEach(btn=>{btn.addEventListener('click',async()=>{const id=btn.dataset.id,up=btn.classList.contains('btn-ct-up'),idx=state.contentTypes.findIndex(t=>t.id===id);if(idx<0)return;const si=up?idx-1:idx+1;if(si<0||si>=state.contentTypes.length)return;const tmp=state.contentTypes[idx];state.contentTypes[idx]=state.contentTypes[si];state.contentTypes[si]=tmp;state.contentTypes.forEach((t,i)=>{t.order=i;saveCT(t);});renderCTManager();renderSidebar();});});
-  el.querySelectorAll('.ct-color-pick').forEach(wrap=>{const p=wrap.querySelector('input');p.addEventListener('input',()=>{wrap.style.background=p.value;});});
-  el.querySelectorAll('.btn-ct-save').forEach(btn=>{btn.addEventListener('click',async()=>{const id=btn.dataset.id,row=document.getElementById(`ctRow_${id}`),ct=state.contentTypes.find(t=>t.id===id);if(!ct)return;ct.icon=row.querySelector('.ct-icon-input').value||ct.icon;ct.name=row.querySelector('.ct-name-input').value.trim()||ct.name;ct.label=row.querySelector('.ct-label-input').value.trim().toUpperCase()||ct.label;ct.bgColor=row.querySelector('.ct-color-pick input').value;await saveCT(ct);renderAll();toast('✅ Tipo atualizado!');});});
-  el.querySelectorAll('.btn-ct-del').forEach(btn=>{btn.addEventListener('click',async()=>{const id=btn.dataset.id,ct=state.contentTypes.find(t=>t.id===id);if(!confirm(`Deletar tipo "${ct?.name}"?`))return;await removeCT(id);state.contentTypes=state.contentTypes.filter(t=>t.id!==id);renderCTManager();renderAll();toast('🗑 Tipo removido');});});
-}
+      <!-- CHECKLIST -->
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <span class="proj-field-label" data-i18n="pm.checklist">Checklist de Entregas</span>
+          <div class="proj-progress-wrap" style="width:120px;margin:0"><div class="proj-progress-fill" id="projCheckProgress" style="width:0%"></div></div>
+        </div>
+        <div class="proj-checklist" id="projChecklist"></div>
+        <div class="proj-check-add">
+          <input id="projCheckInput" placeholder="Nova entrega..." maxlength="80"/>
+          <button class="proj-check-add-btn" id="btnAddCheck">+ Adicionar</button>
+        </div>
+      </div>
 
-document.getElementById('btnAddCT').addEventListener('click',async()=>{const ct={id:uid(),name:'Novo Tipo',label:'NOVO',icon:'✨',bgColor:'#8888ff',textColor:'#fff',order:state.contentTypes.length};state.contentTypes.push(ct);await saveCT(ct);renderCTManager();renderAll();});
-['btnManageCT','fabCT'].forEach(id=>document.getElementById(id)?.addEventListener('click',openCTModal));
-document.getElementById('btnCloseCT').addEventListener('click',closeCTModal);
-document.getElementById('ctOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeCTModal();});
+      <!-- FOOTER -->
+      <div class="proj-modal-footer">
+        <button class="btn-proj-save" id="btnSaveProj">💾 <span data-i18n="pm.save">Salvar Projeto</span></button>
+        <button class="btn-proj-delete" id="btnDeleteProj" style="display:none">🗑 <span data-i18n="pm.delete">Excluir</span></button>
+      </div>
 
-// ─── Settings Modal (Plataformas + Status) ─────────────────────────────────────
-function openSettingsModal(){renderPlatManager();renderSTManager();document.getElementById('settingsOverlay').classList.add('open');}
-function closeSettingsModal(){document.getElementById('settingsOverlay').classList.remove('open');}
+    </div>
+  </div>
+</div>
 
-// Platforms manager
-function renderPlatManager(){
-  const el=document.getElementById('platManager');if(!el)return;
-  el.innerHTML=state.platforms.map((p,idx)=>`
-    <div class="plat-item" id="platRow_${p.id}">
-      <div class="reorder-btns"><button class="btn-reorder btn-plat-up" data-id="${p.id}" ${idx===0?'disabled style="opacity:0.3"':''}>↑</button><button class="btn-reorder btn-plat-dn" data-id="${p.id}" ${idx===state.platforms.length-1?'disabled style="opacity:0.3"':''}>↓</button></div>
-      <input class="st-icon-input" type="text" value="${p.icon}" data-id="${p.id}" maxlength="2"/>
-      <input class="plat-name-input" type="text" value="${p.name}" data-id="${p.id}" maxlength="30" placeholder="Nome da plataforma"/>
-      <div class="plat-color-pick" style="background:${p.color}" data-id="${p.id}"><input type="color" value="${p.color}"/></div>
-      <button class="btn-plat-save" data-id="${p.id}">Salvar</button>
-      <button class="btn-plat-del" data-id="${p.id}">🗑</button>
-    </div>`).join('');
 
-  el.querySelectorAll('.btn-plat-up,.btn-plat-dn').forEach(btn=>{btn.addEventListener('click',async()=>{const id=btn.dataset.id,up=btn.classList.contains('btn-plat-up'),idx=state.platforms.findIndex(p=>p.id===id);if(idx<0)return;const si=up?idx-1:idx+1;if(si<0||si>=state.platforms.length)return;const tmp=state.platforms[idx];state.platforms[idx]=state.platforms[si];state.platforms[si]=tmp;state.platforms.forEach((p,i)=>{p.order=i;savePlat(p);});renderPlatManager();renderSidebarFilters();});});
-  el.querySelectorAll('.plat-color-pick').forEach(wrap=>{const p=wrap.querySelector('input');p.addEventListener('input',()=>{wrap.style.background=p.value;});});
-  el.querySelectorAll('.btn-plat-save').forEach(btn=>{btn.addEventListener('click',async()=>{const id=btn.dataset.id,row=document.getElementById(`platRow_${id}`),p=state.platforms.find(x=>x.id===id);if(!p)return;p.icon=row.querySelector('.st-icon-input').value||p.icon;p.name=row.querySelector('.plat-name-input').value.trim()||p.name;p.color=row.querySelector('.plat-color-pick input').value;await savePlat(p);renderAll();toast('✅ Plataforma atualizada!');});});
-  el.querySelectorAll('.btn-plat-del').forEach(btn=>{btn.addEventListener('click',async()=>{const id=btn.dataset.id,p=state.platforms.find(x=>x.id===id);if(!confirm(`Deletar plataforma "${p?.name}"?`))return;await removePlat(id);state.platforms=state.platforms.filter(x=>x.id!==id);if(state.filterPlatform===id)state.filterPlatform=null;renderPlatManager();renderAll();toast('🗑 Plataforma removida');});});
-}
+<!-- STATUS CONFIG MODAL -->
+<div class="overlay" id="projStatusConfigOverlay">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-hdr">
+      <div>
+        <div class="modal-title">⚙️ Configurar Status</div>
+        <div class="modal-sub">Personalize os status dos seus projetos</div>
+      </div>
+      <button class="btn-close" id="btnCloseProjStatusConfig" title="Fechar" data-i18n-title="common.close">✕</button>
+    </div>
+    <div id="projStatusConfigList"></div>
+    <div style="margin-top:10px">
+      <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:8px">+ Novo Status</div>
+      <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+        <input style="width:38px;padding:8px;border-radius:7px;background:var(--glass);border:1px solid var(--border);color:var(--text);font-size:16px;text-align:center;font-family:inherit" type="text" id="newStatusIcon" placeholder="🏷" maxlength="2"/>
+        <input style="flex:1;min-width:120px;padding:8px 11px;border-radius:7px;background:var(--glass);border:1px solid var(--border);color:var(--text);font-size:13px;font-family:inherit" type="text" id="newStatusName" placeholder="Nome do status..." maxlength="30"/>
+        <div class="ncp-swatch" id="newStatusColorSwatch" style="width:34px;height:34px;border-radius:7px;border:2px solid var(--border);cursor:pointer;flex-shrink:0;background:#74b9ff"></div>
+        <button style="padding:8px 14px;border-radius:7px;background:var(--accent);color:var(--accent-text);font-size:12px;font-weight:800;border:none;cursor:pointer;min-height:36px" id="btnAddProjStatus">Criar</button>
+      </div>
+    </div>
+    <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px">
+      <button class="btn-proj-save" id="btnSaveProjStatuses" style="max-width:160px;padding:10px">💾 Salvar</button>
+    </div>
+  </div>
+</div>
 
-document.getElementById('btnAddPlat').addEventListener('click',async()=>{const p={id:uid(),name:'Nova Plataforma',icon:'📱',color:'#888888',order:state.platforms.length};state.platforms.push(p);await savePlat(p);renderPlatManager();renderSidebarFilters();});
 
-// Status manager
-function renderSTManager(){
-  const el=document.getElementById('stManager');if(!el)return;
-  el.innerHTML=state.postStatuses.map((s,idx)=>`
-    <div class="st-item" id="stRow_${s.id}">
-      <div class="reorder-btns"><button class="btn-reorder btn-st-up" data-id="${s.id}" ${idx===0?'disabled style="opacity:0.3"':''}>↑</button><button class="btn-reorder btn-st-dn" data-id="${s.id}" ${idx===state.postStatuses.length-1?'disabled style="opacity:0.3"':''}>↓</button></div>
-      <input class="st-icon-input" type="text" value="${s.icon}" data-id="${s.id}" maxlength="2"/>
-      <input class="st-name-input" type="text" value="${s.name}" data-id="${s.id}" maxlength="30" placeholder="Nome do status"/>
-      <div class="st-color-pick" style="background:${s.color}"><input type="color" value="${s.color}"/></div>
-      <button class="btn-st-save" data-id="${s.id}">Salvar</button>
-      <button class="btn-st-del" data-id="${s.id}">🗑</button>
-    </div>`).join('');
+<!-- PERFIL DO USUÁRIO -->
+<div class="overlay" id="profileOverlay">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-hdr">
+      <div><div class="modal-title" data-i18n="profile.title">👤 Meu Perfil</div><div class="modal-sub" data-i18n="profile.subtitle">Personalize sua conta</div></div>
+      <button class="btn-close" id="btnCloseProfile" title="Fechar" data-i18n-title="common.close">✕</button>
+    </div>
 
-  el.querySelectorAll('.btn-st-up,.btn-st-dn').forEach(btn=>{btn.addEventListener('click',async()=>{const id=btn.dataset.id,up=btn.classList.contains('btn-st-up'),idx=state.postStatuses.findIndex(s=>s.id===id);if(idx<0)return;const si=up?idx-1:idx+1;if(si<0||si>=state.postStatuses.length)return;const tmp=state.postStatuses[idx];state.postStatuses[idx]=state.postStatuses[si];state.postStatuses[si]=tmp;state.postStatuses.forEach((s,i)=>{s.order=i;saveST(s);});renderSTManager();renderStatusFilterBar();});});
-  el.querySelectorAll('.st-color-pick').forEach(wrap=>{const p=wrap.querySelector('input');p.addEventListener('input',()=>{wrap.style.background=p.value;});});
-  el.querySelectorAll('.btn-st-save').forEach(btn=>{btn.addEventListener('click',async()=>{const id=btn.dataset.id,row=document.getElementById(`stRow_${id}`),s=state.postStatuses.find(x=>x.id===id);if(!s)return;s.icon=row.querySelector('.st-icon-input').value||s.icon;s.name=row.querySelector('.st-name-input').value.trim()||s.name;s.color=row.querySelector('.st-color-pick input').value;await saveST(s);renderAll();toast('✅ Status atualizado!');});});
-  el.querySelectorAll('.btn-st-del').forEach(btn=>{btn.addEventListener('click',async()=>{const id=btn.dataset.id,s=state.postStatuses.find(x=>x.id===id);if(!confirm(`Deletar status "${s?.name}"?`))return;await removeST(id);state.postStatuses=state.postStatuses.filter(x=>x.id!==id);if(state.filterStatus===id)state.filterStatus=null;renderSTManager();renderStatusFilterBar();toast('🗑 Status removido');});});
-}
+    <!-- Idioma -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--glass);border:1px solid var(--border);border-radius:12px;margin-bottom:10px">
+      <span style="font-size:12px;font-weight:700;color:var(--muted)">🌐 Idioma / Language</span>
+      <div style="display:flex;gap:6px">
+        <button class="lang-flag-btn" data-lang="pt" title="Português">🇧🇷</button>
+        <button class="lang-flag-btn" data-lang="en" title="English">🇺🇸</button>
+        <button class="lang-flag-btn" data-lang="es" title="Español">🇪🇸</button>
+      </div>
+    </div>
 
-document.getElementById('btnAddST').addEventListener('click',async()=>{const s={id:uid(),name:'Novo Status',icon:'🔵',color:'#4488ff',order:state.postStatuses.length};state.postStatuses.push(s);await saveST(s);renderSTManager();renderAll();});
+    <!-- Tema -->
+    <div style="padding:12px 14px;background:var(--glass);border:1px solid var(--border);border-radius:12px;margin-bottom:10px">
+      <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:9px" data-i18n="profile.theme">🎨 Tema</div>
+      <div class="theme-switcher" id="themeSwitcher" role="radiogroup" aria-label="Tema">
+        <button class="theme-opt-btn" data-theme-pref="dark" role="radio" aria-checked="false">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <span data-i18n="profile.themeDark">Escuro</span>
+        </button>
+        <button class="theme-opt-btn" data-theme-pref="light" role="radio" aria-checked="false">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <span data-i18n="profile.themeLight">Claro</span>
+        </button>
+        <button class="theme-opt-btn" data-theme-pref="system" role="radio" aria-checked="false">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <span data-i18n="profile.themeSystem">Sistema</span>
+        </button>
+      </div>
+    </div>
 
-['btnSettings','fabSettings'].forEach(id=>document.getElementById(id)?.addEventListener('click',openSettingsModal));
-document.getElementById('btnCloseSettings').addEventListener('click',closeSettingsModal);
-document.getElementById('settingsOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeSettingsModal();});
+    <!-- Rever tutorial -->
+    <button class="profile-list-btn" id="btnReplayWizard">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+      <span data-i18n="profile.replayTutorial">Ver tutorial novamente</span>
+    </button>
 
-// ─── Workspace Settings ─────────────────────────────────────────────────────────
-async function openWsSettings(){
-  const ws=state.currentWorkspace;if(!ws)return;
-  document.getElementById('wsSettingsTitle').textContent=`⚙️ ${ws.name}`;
-  document.getElementById('wsSettingsSub').textContent=`${(ws.memberUids||[]).length} membros · Você é ${ws.role}`;
-  await renderWsSettings(ws);document.getElementById('wsSettingsOverlay').classList.add('open');
-}
-function closeWsSettings(){document.getElementById('wsSettingsOverlay').classList.remove('open');}
-async function renderWsSettings(ws){
-  const el=document.getElementById('wsSettingsContent'),myUid=currentUser.uid,isOwner=ws.ownerId===myUid;
-  let html='';
-  html+=`<div class="sect-title" style="margin-bottom:8px">Membros (${(ws.memberUids||[]).length})</div>`;
-  Object.entries(ws.members||{}).forEach(([muid,m])=>{
-    const isMe=muid===myUid,rc=`role-${m.role}`;
-    const roleEl=isOwner&&!isMe&&m.role!=='owner'?`<select class="ws-role-select" data-uid="${muid}"><option value="editor" ${m.role==='editor'?'selected':''}>Editor</option><option value="viewer" ${m.role==='viewer'?'selected':''}>Viewer</option></select>`:`<span class="ws-role-badge ${rc}">${m.role}</span>`;
-    const rmBtn=isOwner&&!isMe?`<button class="btn-ws-icon btn-rm-member" data-uid="${muid}" data-name="${m.displayName}">🗑</button>`:'';
-    html+=`<div class="ws-member-item"><img class="ws-member-avatar" src="${m.photoURL||''}" onerror="this.style.background='var(--bg3)';this.src=''" alt=""/><div class="ws-member-info"><div class="ws-member-name">${m.displayName}${isMe?' (você)':''}</div><div class="ws-member-email">${m.email}</div></div>${roleEl}${rmBtn}</div>`;
-  });
-  const ws2=state.userWorkspaces.find(w=>w.id===ws.id),pending=ws2?.pendingList||[];
-  if(isOwner&&pending.length>0){
-    html+=`<div class="sect-title" style="margin-bottom:8px;margin-top:14px;color:#ffa502">⏳ Aprovações Pendentes (${pending.length})</div>`;
-    pending.forEach(req=>{html+=`<div class="pending-item"><img class="ws-member-avatar" src="${req.photoURL||''}" onerror="this.style.background='var(--bg3)';this.src=''" alt=""/><div class="ws-member-info"><div class="ws-member-name">${req.displayName}</div><div class="ws-member-email">${req.email} · ${relativeTime(req.requestedAt)}</div></div><select class="pending-select" id="psel_${req.uid}"><option value="editor">Editor</option><option value="viewer">Viewer</option></select><button class="btn-approve" data-uid="${req.uid}" data-name="${req.displayName}" data-email="${req.email}" data-photo="${req.photoURL||''}">✓</button><button class="btn-reject" data-uid="${req.uid}" data-name="${req.displayName}">✗</button></div>`;});
-  }
-  if(isOwner){const inviteUrl=`${location.origin}${location.pathname}?join=${ws.inviteCode}`;html+=`<div class="divider"></div><div class="sect-title" style="margin-bottom:8px">🔗 Link de Convite</div><div class="invite-box" id="inviteLinkBox">${inviteUrl}</div><div class="invite-btns"><button class="btn-copy" id="btnCopyLink">📋 Copiar</button><button class="btn-regen" id="btnRegenCode">🔄 Novo</button></div>`;}
-  html+=`<div class="divider"></div><div class="danger-zone"><div class="danger-title">⚠️ Danger Zone</div>${!isOwner?`<button class="btn-danger" id="btnLeaveWs">👋 Sair do Workspace</button>`:`<button class="btn-danger" id="btnDeleteWs">🗑 Deletar Workspace</button>`}</div>`;
-  el.innerHTML=html;
-  el.querySelectorAll('.ws-role-select').forEach(sel=>sel.addEventListener('change',async()=>await updateMemberRole(ws.id,sel.dataset.uid,sel.value)));
-  el.querySelectorAll('.btn-rm-member').forEach(btn=>btn.addEventListener('click',async()=>{await removeMember(ws.id,btn.dataset.uid,btn.dataset.name);await openWsSettings();}));
-  el.querySelectorAll('.btn-approve').forEach(btn=>btn.addEventListener('click',async()=>{const role=document.getElementById(`psel_${btn.dataset.uid}`)?.value||'editor';await approveRequest(ws.id,{uid:btn.dataset.uid,email:btn.dataset.email,displayName:btn.dataset.name,photoURL:btn.dataset.photo},role);await renderWsSettings(state.currentWorkspace||ws);}));
-  el.querySelectorAll('.btn-reject').forEach(btn=>btn.addEventListener('click',async()=>{await rejectRequest(ws.id,btn.dataset.uid,btn.dataset.name);await renderWsSettings(state.currentWorkspace||ws);}));
-  document.getElementById('btnCopyLink')?.addEventListener('click',()=>{const txt=document.getElementById('inviteLinkBox')?.textContent;if(txt)navigator.clipboard.writeText(txt).then(()=>toast('📋 Link copiado!'));});
-  document.getElementById('btnRegenCode')?.addEventListener('click',async()=>{await regenerateInviteCode(ws.id);const ws2=state.userWorkspaces.find(w=>w.id===ws.id);if(ws2)await renderWsSettings(ws2);});
-  document.getElementById('btnLeaveWs')?.addEventListener('click',async()=>{await leaveWorkspace(ws.id);closeWsSettings();});
-  document.getElementById('btnDeleteWs')?.addEventListener('click',async()=>{await deleteWorkspace(ws.id,ws.name);closeWsSettings();});
-}
-document.getElementById('btnWsSettings').addEventListener('click',openWsSettings);
-document.getElementById('btnCloseWsSettings').addEventListener('click',closeWsSettings);
-document.getElementById('wsSettingsOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeWsSettings();});
+    <!-- Falar com o suporte -->
+    <button class="profile-list-btn" id="btnOpenSupport">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+      <span data-i18n="profile.contactSupport">Falar com o suporte</span>
+    </button>
 
-// ─── Create Workspace ───────────────────────────────────────────────────────────
-function openCreateWs(){pendingLogoBase64=null;document.getElementById('wsLogoPreview').innerHTML='🏢';document.getElementById('wsNameInput').value='';document.getElementById('createWsOverlay').classList.add('open');closeWsDropdown();}
-function closeCreateWs(){document.getElementById('createWsOverlay').classList.remove('open');}
-document.getElementById('wsLogoInput').addEventListener('change',e=>{
-  const file=e.target.files[0];if(!file)return;if(file.size>500*1024){toast('⚠️ Imagem muito grande (max 500KB)');return;}
-  const canvas=document.createElement('canvas');canvas.width=canvas.height=128;const ctx=canvas.getContext('2d');
-  const img=new Image();img.onload=()=>{const size=Math.min(img.width,img.height),sx=(img.width-size)/2,sy=(img.height-size)/2;ctx.drawImage(img,sx,sy,size,size,0,0,128,128);pendingLogoBase64=canvas.toDataURL('image/jpeg',0.85);document.getElementById('wsLogoPreview').innerHTML=`<img src="${pendingLogoBase64}" alt="Logo"/>`;};img.src=URL.createObjectURL(file);
-});
-['btnCreateWsLink'].forEach(id=>document.getElementById(id)?.addEventListener('click',openCreateWs));
-document.getElementById('btnCloseCreateWs').addEventListener('click',closeCreateWs);
-document.getElementById('createWsOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeCreateWs();});
-document.getElementById('btnConfirmCreateWs').addEventListener('click',async()=>{
-  const name=document.getElementById('wsNameInput').value.trim();if(!name){toast('⚠️ Digite o nome');return;}
-  const btn=document.getElementById('btnConfirmCreateWs');btn.innerHTML='<span class="ld"></span> Criando...';btn.disabled=true;
-  try{const ws=await createWorkspace(name,pendingLogoBase64);closeCreateWs();setTimeout(()=>switchWorkspace({...ws,role:'owner'}),500);}
-  catch(e){toast(`❌ Erro: ${e.message}`);}
-  finally{btn.innerHTML='🏢 Criar Workspace';btn.disabled=false;}
-});
+    <!-- Avatar -->
+    <div style="display:flex;align-items:center;gap:16px;padding:16px;border-radius:12px;background:var(--glass);border:1px solid var(--border);margin-bottom:16px">
+      <div style="position:relative">
+        <img id="profileAvatarPreview" src="" alt="" style="width:72px;height:72px;border-radius:50%;object-fit:cover;background:var(--bg3);border:3px solid var(--accent)"/>
+        <label for="profileAvatarInput" style="position:absolute;bottom:-2px;right:-2px;width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--accent-text);display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;border:2px solid var(--bg2)">✏️</label>
+        <input type="file" id="profileAvatarInput" accept="image/png,image/jpeg" style="display:none"/>
+      </div>
+      <div>
+        <div id="profileDisplayName" style="font-size:15px;font-weight:800"></div>
+        <div id="profileDisplayEmail" style="font-size:11px;color:var(--muted);margin-top:2px"></div>
+        <div id="profileProvider" style="font-size:10px;color:var(--dim);margin-top:4px"></div>
+      </div>
+    </div>
 
-// ─── Analytics ─────────────────────────────────────────────────────────────────
-async function openAnalytics(){document.getElementById('analyticsOverlay').classList.add('open');document.getElementById('analyticsContent').innerHTML='<div style="text-align:center;padding:30px 0;color:var(--muted)"><span class="ld"></span><br><br>Carregando...</div>';renderAnalyticsModal(await loadAnalytics());}
-function closeAnalytics(){document.getElementById('analyticsOverlay').classList.remove('open');}
-document.getElementById('btnAnalytics')?.addEventListener('click',openAnalytics);
-document.getElementById('btnCloseAnalytics').addEventListener('click',closeAnalytics);
-document.getElementById('analyticsOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeAnalytics();});
-async function loadAnalytics(){
-  if(currentUser?.email!==ADMIN_EMAIL)return null;
-  try{const fmt=d=>d.toISOString().slice(0,10),today=new Date(),ago=n=>fmt(new Date(today.getTime()-n*86400000));const[usersSnap,todayDoc,ago3Doc,ago7Doc,ago30Doc]=await Promise.all([getDocs(collection(db,'_users')),getDoc(doc(db,'_daily',fmt(today))),getDoc(doc(db,'_daily',ago(3))),getDoc(doc(db,'_daily',ago(7))),getDoc(doc(db,'_daily',ago(30)))]);return{stats:{total:usersSnap.size,today:(todayDoc.data()?.users||[]).length,ago3:(ago3Doc.data()?.users||[]).length,ago7:(ago7Doc.data()?.users||[]).length,ago30:(ago30Doc.data()?.users||[]).length},users:usersSnap.docs.map(d=>({uid:d.id,...d.data()})).sort((a,b)=>(b.lastSeen?.seconds||0)-(a.lastSeen?.seconds||0))};}catch(e){return null;}
-}
-function renderAnalyticsModal(data){
-  const el=document.getElementById('analyticsContent');
-  if(!data){el.innerHTML='<div style="color:var(--danger);text-align:center;padding:20px">❌ Erro. Verifique as regras do Firestore.</div>';return;}
-  const{stats,users}=data;
-  el.innerHTML=`<div class="analytics-grid"><div class="stat-card main"><div class="stat-num">${stats.total}</div><div class="stat-label">Contas Registradas</div></div><div class="stat-card"><div class="stat-num">${stats.today}</div><div class="stat-label">Usaram Hoje</div></div><div class="stat-card"><div class="stat-num">${stats.ago3}</div><div class="stat-label">3 Dias Atrás</div></div><div class="stat-card"><div class="stat-num">${stats.ago7}</div><div class="stat-label">7 Dias Atrás</div></div><div class="stat-card"><div class="stat-num">${stats.ago30}</div><div class="stat-label">1 Mês Atrás</div></div></div><div class="divider"></div><div class="sect-title" style="margin-bottom:10px">Todos os usuários (${users.length})</div><div>${users.map(u=>`<div class="au-item"><img class="au-avatar" src="${u.photoURL||''}" onerror="this.style.display='none'" alt=""/><div class="au-info"><div class="au-name">${u.displayName||'Sem nome'}</div><div class="au-email">${u.email}</div></div><div class="au-last">${relativeTime(u.lastSeen)}</div></div>`).join('')}</div>`;
-}
+    <!-- Campos -->
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div>
+        <label style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:0.9px;color:var(--muted);display:block;margin-bottom:5px" data-i18n="profile.name">Nome completo</label>
+        <input class="login-input" type="text" id="profileName" placeholder="Seu nome..."/>
+      </div>
+      <div>
+        <label style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:0.9px;color:var(--muted);display:block;margin-bottom:5px" data-i18n="profile.phone">Celular</label>
+        <div style="display:flex;gap:6px;align-items:flex-start">
+          <!-- Country code custom dropdown -->
+          <div class="pdd-wrap" id="profileCountryDd" style="flex-shrink:0;min-width:130px">
+            <div class="pdd-btn" id="profileCountryDdBtn" style="padding:10px 10px;min-height:44px">
+              <span id="profileCountryFlag" style="font-size:13px">🇧🇷</span>
+              <span id="profileCountryCode" style="font-size:12px;font-weight:700;color:var(--text)">+55</span>
+              <span class="pdd-arrow" style="margin-left:auto">▾</span>
+            </div>
+            <div class="pdd-menu" id="profileCountryDdMenu" style="min-width:220px"></div>
+          </div>
+          <input class="login-input" type="tel" id="profilePhone" placeholder="Número..." style="flex:1;min-height:44px"/>
+        </div>
+        <input type="hidden" id="profilePhoneCountry" value="+55"/>
+      </div>
+      <div>
+        <label style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:0.9px;color:var(--muted);display:block;margin-bottom:5px" data-i18n="profile.email">E-mail</label>
+        <input class="login-input" type="email" id="profileEmail" placeholder="seu@email.com"/>
+      </div>
+    </div>
 
-// ─── Month Nav + Keyboard ───────────────────────────────────────────────────────
-document.getElementById('btnPrev').addEventListener('click',()=>{if(state.year===MIN_Y&&state.month===MIN_M)return;if(state.month===1){state.year--;state.month=12;}else state.month--;renderAll();});
-document.getElementById('btnNext').addEventListener('click',()=>{if(state.year===MAX_Y&&state.month===MAX_M)return;if(state.month===12){state.year++;state.month=1;}else state.month++;renderAll();});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDayModal();closeClientsModal();closeCTModal();closeSettingsModal();closeWsSettings();closeCreateWs();closeAnalytics();closeWsDropdown();clientDdOpen=false;platDdOpen=false;}if(!document.querySelector('.overlay.open')){if(e.key==='ArrowLeft')document.getElementById('btnPrev').click();if(e.key==='ArrowRight')document.getElementById('btnNext').click();}});
+    <!-- Alterar senha (só email/password) -->
+    <div id="profilePasswordSection" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+      <div style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px">Alterar Senha</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <input class="login-input" type="password" id="profileOldPass" placeholder="Senha atual"/>
+        <input class="login-input" type="password" id="profileNewPass" placeholder="Nova senha (mín. 6 caracteres)"/>
+      </div>
+    </div>
 
-// ─── Global click ───────────────────────────────────────────────────────────────
-document.addEventListener('click',e=>{
-  const cddWrap=document.getElementById('clientDdWrap');
-  if(cddWrap&&!cddWrap.contains(e.target)){clientDdOpen=false;const menu=document.getElementById('cddMenu');const btn=document.getElementById('cddBtn');if(menu)menu.classList.remove('open');if(btn)btn.classList.remove('open');}
-  const platWrap=document.getElementById('platDdWrap');
-  if(platWrap&&!platWrap.contains(e.target)){platDdOpen=false;const pm=document.getElementById('platDdMenu');const pb=document.getElementById('platDdBtn');if(pm)pm.classList.remove('open');if(pb)pb.classList.remove('open');}
-  const dd=document.getElementById('wsDropdown'),sw=document.getElementById('btnWsSwitcher');
-  if(dd&&!dd.contains(e.target)&&sw&&!sw.contains(e.target))dd.classList.remove('open');
-});
+    <!-- Contas conectadas -->
+    <div id="profileProviders" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+      <div style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px">Conta Conectada</div>
+      <div id="profileProvidersList"></div>
+    </div>
 
-// ─── Auth ───────────────────────────────────────────────────────────────────────
-document.getElementById('btnGoogle').addEventListener('click',async()=>{const loading=document.getElementById('loginLoading'),errEl=document.getElementById('loginErr');loading.style.display='flex';errEl.style.display='none';try{const provider=new GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});await signInWithPopup(auth,provider);}catch(e){loading.style.display='none';errEl.style.display='block';errEl.textContent=e.code==='auth/popup-closed-by-user'?'Login cancelado.':`Erro: ${e.message}`;}});
-document.getElementById('btnLogout').addEventListener('click',async()=>{if(confirm('Sair do NOOMA Calendar?')){await signOut(auth);showScreen('screenLogin');}});
-document.getElementById('userChip').addEventListener('click',()=>{if(confirm('Sair do NOOMA Calendar?'))signOut(auth);});
-document.getElementById('btnWsSwitcher').addEventListener('click',e=>{e.stopPropagation();document.getElementById('wsDropdown').classList.toggle('open');});
-document.getElementById('fabWs')?.addEventListener('click',e=>{e.stopPropagation();document.getElementById('wsDropdown').classList.toggle('open');});
+    <div style="display:flex;gap:8px;margin-top:20px">
+      <button class="btn-proj-save" id="btnSaveProfile" style="flex:1;padding:12px">💾 <span data-i18n="profile.save">Salvar alterações</span></button>
+      <button class="btn-proj-delete" id="btnProfileLogout" style="padding:12px 16px" data-i18n="profile.logout">Sair</button>
+    </div>
+  </div>
+</div>
 
-// ─── Setup (removido — config já está hardcoded) ────────────────────────────────
-// A tela de setup não é mais necessária.
-
-// ─── Invite URL ─────────────────────────────────────────────────────────────────
-async function checkInviteURL(){
-  const params=new URLSearchParams(window.location.search),joinCode=params.get('join')||localStorage.getItem('nooma_pending_join');
-  if(!joinCode||!currentUser)return;localStorage.removeItem('nooma_pending_join');window.history.replaceState({},'',window.location.pathname);
-  await requestToJoin(joinCode);
-}
-
-// ─── Init ───────────────────────────────────────────────────────────────────────
-async function init(){
-  loadNav();
-  // Mostrar tela de loading imediatamente
-  const loading=document.getElementById('screenLoading');
-  const login=document.getElementById('screenLogin');
-  const app=document.getElementById('screenApp');
-  if(loading)loading.style.display='flex';
-  if(login)login.style.display='none';
-  if(app)app.style.display='none';
-
-  // Guardrail absoluto: após 5 segundos, vai para o login sem importância do que aconteceu
-  const killTimer=setTimeout(()=>{
-    if(loading&&loading.style.display!=='none'){
-      loading.style.display='none';
-      if(login)login.style.display='flex';
-    }
-  },5000);
-
-  const params=new URLSearchParams(window.location.search),joinCode=params.get('join');
-  if(joinCode)localStorage.setItem('nooma_pending_join',joinCode);
-
-  // initFirebase não é aguardado: onAuthStateChanged cuida das transições de tela
-  initFirebase().catch(e=>{
-    console.error('initFirebase falhou:',e);
-    clearTimeout(killTimer);
-    if(loading)loading.style.display='none';
-    if(login)login.style.display='flex';
-  });
-}
-init();
-</script>
 </body>
 </html>
