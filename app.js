@@ -2456,7 +2456,7 @@ function renderTasks(){
         <span class="task-col-count">${col.items.length}</span>
       </div>
       <div class="task-col-body">
-        ${col.items.length?col.items.map(renderTaskCard).join(''):`<div class="task-col-empty">${t('tasks.colEmpty')}</div>`}
+        ${col.items.length?col.items.map(renderTaskCard).join(''):`<div class="task-col-empty">${renderIcon(col.id==='done'?'check-circle':'circle-dashed',24)}<span>${t('tasks.colEmpty')}</span></div>`}
       </div>
     </div>
   `).join('');
@@ -2692,7 +2692,7 @@ function renderTasksIfActive(){
 function updateTaskTabBadge(){
   const badge = document.getElementById('taskTabBadge');
   if(!badge)return;
-  const pending = taskState.tasks.filter(t=>t.status!=='done').length;
+  const pending = taskState.tasks.filter(t=>!t.done).length;
   if(pending>0){badge.textContent=pending;badge.style.display='inline-flex';}
   else badge.style.display='none';
 }
