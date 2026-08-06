@@ -257,7 +257,7 @@ let notifCheckInterval=null;
 let authKillTimer=null;
 
 const state={
-  year:2026,month:7,weekOffset:0,
+  year:getBrasiliaToday().year,month:getBrasiliaToday().month,weekOffset:0,
   clients:[],posts:{},
   contentTypes:[...DEFAULT_CONTENT_TYPES],
   postStatuses:[...DEFAULT_STATUSES],
@@ -300,8 +300,38 @@ function showScreen(id){
 }
 
 // \u2500\u2500\u2500 LocalStorage \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// Data "hoje" sempre segundo o horario de Brasilia -- independente do fuso
+// horario do dispositivo de quem esta usando (padrao unico e prevgroup para
+// todo mundo, ja que a agencia opera no horario do Brasil).
+function getBrasiliaToday(){
+  const parts=new Intl.DateTimeFormat('en-CA',{
+    timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'
+  }).formatToParts(new Date());
+  const map={};parts.forEach(p=>map[p.type]=p.value);
+  return {year:+map.year,month:+map.month,day:+map.day};
+}
+// Chave "YYYY-MM-DD" do dia de hoje, sempre em horario de Brasilia --
+// substitui o padrao antigo fmtDate(new Date()), que usava UTC e podia
+// mostrar o dia errado durante a noite (horario de Brasilia esta 3h
+// atras de UTC, entao perto da meia-noite o UTC ja "virou o dia").
+function todayKey(){
+  const t=getBrasiliaToday();
+  return dk(t.year,t.month,t.day);
+}
+
 function saveNav(){localStorage.setItem('nooma_nav',JSON.stringify({y:state.year,m:state.month,view:currentView}));}
-function loadNav(){try{const o=JSON.parse(localStorage.getItem('nooma_nav')||'{}');if(o.y){state.year=o.y;state.month=o.m;}if(o.view)currentView=o.view;}catch(e){}}
+function loadNav(){
+  // O ano/mes NUNCA e restaurado do que ficou salvo -- o calendario sempre
+  // abre no mes atual (horario de Brasilia), como pedido. So a preferencia
+  // de visualizacao (Mes/Semana/Lista) continua sendo lembrada.
+  try{
+    const o=JSON.parse(localStorage.getItem('nooma_nav')||'{}');
+    if(o.view)currentView=o.view;
+  }catch(e){}
+  const today=getBrasiliaToday();
+  state.year=today.year;
+  state.month=today.month;
+}
 
 
 // \u2500\u2500\u2500 Data Path \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
@@ -382,7 +412,7 @@ function getWeekDates(){
 }
 function renderWeekView(){
   const dates=getWeekDates();
-  const todayStr=fmtDate(new Date());
+  const todayStr=todayKey();
   const hdr=document.getElementById('weekHeader');
   const cols=document.getElementById('weekCols');
   if(!hdr||!cols)return;
@@ -452,7 +482,7 @@ function renderListView(){
   if(state.filterStatus)filtered=filtered.filter(p=>(p.status||'draft')===state.filterStatus);
   filtered.sort((a,b)=>a.dateKey.localeCompare(b.dateKey));
   if(!filtered.length){el.innerHTML='<div class="list-empty">\uD83D\uDCED Nenhum post encontrado</div>';return;}
-  const todayStr=fmtDate(new Date());
+  const todayStr=todayKey();
   const byMonth={};filtered.forEach(p=>{const mk=p.dateKey.slice(0,7);if(!byMonth[mk])byMonth[mk]=[];byMonth[mk].push(p);});
   let html='';
   Object.entries(byMonth).sort(([a],[b])=>a.localeCompare(b)).forEach(([mk,posts])=>{
@@ -511,14 +541,25 @@ function setupAssignmentNotifListener(){
       if(change.type==='removed')return;
       const n=change.doc.data();
       if(n.read)return;
-      addNotif({
-        key:`proj_assign_${change.doc.id}`,
-        icon:'\uD83D\uDCBC',
-        bg:'rgba(237,242,82,0.12)',
-        title:t('notif.assignedTitle'),
-        body:t('notif.assignedBody',{name:n.fromName,project:n.projectTitle}),
-        actions:[{label:t('notif.viewProject'),act:'view_project',primary:true,projectId:n.projectId,notifDocId:change.doc.id}],
-      });
+      if(n.type==='task_assigned'){
+        addNotif({
+          key:`task_assign_${change.doc.id}`,
+          icon:'\u2705',
+          bg:'rgba(46,213,115,0.12)',
+          title:t('notif.taskAssignedTitle'),
+          body:t('notif.taskAssignedBody',{name:n.fromName,task:n.taskTitle}),
+          actions:[{label:t('notif.viewTask'),act:'view_task',primary:true,taskId:n.taskId,notifDocId:change.doc.id}],
+        });
+      }else{
+        addNotif({
+          key:`proj_assign_${change.doc.id}`,
+          icon:'\uD83D\uDCBC',
+          bg:'rgba(237,242,82,0.12)',
+          title:t('notif.assignedTitle'),
+          body:t('notif.assignedBody',{name:n.fromName,project:n.projectTitle}),
+          actions:[{label:t('notif.viewProject'),act:'view_project',primary:true,projectId:n.projectId,notifDocId:change.doc.id}],
+        });
+      }
     });
   },e=>console.warn('assignment notifs:',e.message));
 }
@@ -534,7 +575,7 @@ function renderNotifCenter(){
   const el=document.getElementById('notifList');if(!el)return;
   const notifs=getStoredNotifs();
   if(!notifs.length){el.innerHTML='<div class="notif-empty">\uD83C\uDF89 Tudo em dia!</div>';return;}
-  el.innerHTML=notifs.map(n=>`<div class="notif-item${n.read?'':' unread'}" data-nid="${n.id}">${!n.read?'<span class="notif-unread-dot"></span>':''}<div class="notif-icon" style="background:${n.bg||'rgba(237,242,82,0.1)'}">${n.icon||'\uD83D\uDD14'}</div><div class="notif-content"><div class="notif-title">${esc(n.title)}</div><div class="notif-body">${esc(n.body)}</div><div class="notif-time">${relativeTime({seconds:Math.floor(n.createdAt/1000)})}</div>${n.actions?`<div class="notif-action">${n.actions.map(a=>`<button class="notif-btn ${a.primary?'notif-btn-primary':'notif-btn-secondary'}" data-act="${a.act}" data-project-id="${a.projectId||''}" data-notif-doc-id="${a.notifDocId||''}" data-date-key="${a.dateKey||''}">${a.label}</button>`).join('')}</div>`:''}</div></div>`).join('');
+  el.innerHTML=notifs.map(n=>`<div class="notif-item${n.read?'':' unread'}" data-nid="${n.id}">${!n.read?'<span class="notif-unread-dot"></span>':''}<div class="notif-icon" style="background:${n.bg||'rgba(237,242,82,0.1)'}">${n.icon||'\uD83D\uDD14'}</div><div class="notif-content"><div class="notif-title">${esc(n.title)}</div><div class="notif-body">${esc(n.body)}</div><div class="notif-time">${relativeTime({seconds:Math.floor(n.createdAt/1000)})}</div>${n.actions?`<div class="notif-action">${n.actions.map(a=>`<button class="notif-btn ${a.primary?'notif-btn-primary':'notif-btn-secondary'}" data-act="${a.act}" data-project-id="${a.projectId||''}" data-task-id="${a.taskId||''}" data-notif-doc-id="${a.notifDocId||''}" data-date-key="${a.dateKey||''}">${a.label}</button>`).join('')}</div>`:''}</div></div>`).join('');
   el.querySelectorAll('.notif-item').forEach(item=>{
     item.addEventListener('click',e=>{if(e.target.matches('.notif-btn'))return;const nfs=getStoredNotifs();const n=nfs.find(x=>x.id===item.dataset.nid);if(n)n.read=true;saveNotifs(nfs);item.classList.remove('unread');item.querySelector('.notif-unread-dot')?.remove();updateNotifBell();});
     item.querySelectorAll('.notif-btn').forEach(btn=>{btn.addEventListener('click',()=>{const nfs=getStoredNotifs();const n=nfs.find(x=>x.id===item.dataset.nid);if(n)n.read=true;saveNotifs(nfs);if(btn.dataset.act==='open_ws_settings')openWsSettings();
@@ -554,6 +595,14 @@ function renderNotifCenter(){
                 if(btn.dataset.notifDocId)markAssignmentNotifRead(btn.dataset.notifDocId);
                 if(currentAppTab!=='projects')switchAppTab('projects');
                 if(btn.dataset.projectId&&projState.projects.some(p=>p.id===btn.dataset.projectId))openProjModal(btn.dataset.projectId);
+              }
+              else if(btn.dataset.act==='view_task'){
+                closeNotifCenter();
+                if(btn.dataset.notifDocId)markAssignmentNotifRead(btn.dataset.notifDocId);
+                if(currentAppTab!=='tasks')switchAppTab('tasks');
+                setTimeout(()=>{
+                  if(btn.dataset.taskId&&taskState.tasks.some(tk=>tk.id===btn.dataset.taskId))openTaskModal(btn.dataset.taskId);
+                },150);
               }renderNotifCenter();updateNotifBell();});});
   });
 }
@@ -567,7 +616,7 @@ document.getElementById('btnMarkAllRead')?.addEventListener('click',()=>{markAll
 // \u2500\u2500\u2500 NOTIFICATION CHECKER \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function checkNotifications(){
   if(!currentUser||!state.posts)return;
-  const now=Date.now();const today=fmtDate(new Date());
+  const now=Date.now();const today=todayKey();
   const allPosts=[];Object.entries(state.posts).forEach(([key,arr])=>{arr.forEach(p=>{allPosts.push({...p,dateKey:key});});});
   allPosts.forEach(p=>{
     const cl=getC(p.clientId);if(!cl)return;
@@ -649,7 +698,10 @@ let taskState = {
   searchQuery: '',
   editingId: null,
   editChecklist: [],
+  editOwners: [],
   _selPriority: 'normal',
+  _selStatus: 'aberto',
+  _selClientId: null,
   _selDueDate: '',
 };
 
@@ -899,7 +951,7 @@ async function initFirebase(){
 async function trackActivity(user){
   if(!db)return;
   try{
-    const today=fmtDate(new Date()),ref=doc(db,'_users',user.uid),snap=await getDoc(ref),isNew=!snap.exists();
+    const today=todayKey(),ref=doc(db,'_users',user.uid),snap=await getDoc(ref),isNew=!snap.exists();
     await setDoc(ref,{email:user.email||'',displayName:user.displayName||'',photoURL:user.photoURL||null,lastSeen:serverTimestamp(),...(isNew?{createdAt:serverTimestamp()}:{})},{merge:true});
     await setDoc(doc(db,'_daily',today),{users:arrayUnion(user.uid)},{merge:true});
   }catch(e){}
@@ -1335,7 +1387,7 @@ function renderCalendar(){
   const grid=document.getElementById('calGrid');if(!grid)return;
   const{year,month}=state;
   const firstDay=new Date(year,month-1,1).getDay(),daysInMonth=new Date(year,month,0).getDate();
-  const today=new Date(),isThisM=today.getFullYear()===year&&today.getMonth()+1===month;
+  const today=getBrasiliaToday(),isThisM=today.year===year&&today.month===month;
   const lbl=document.getElementById('monthLbl');if(lbl)lbl.innerHTML=`${MONTHS[month-1]} <em>${year}</em>`;
   // Heatmap max
   let maxPosts=0;
@@ -1361,7 +1413,7 @@ function renderCalendar(){
   }
   // \u2500\u2500 Days IN this month
   for(let d=1;d<=daysInMonth;d++){
-    const key=dk(year,month,d),dayPosts=state.posts[key]||[],isToday=isThisM&&today.getDate()===d;
+    const key=dk(year,month,d),dayPosts=state.posts[key]||[],isToday=isThisM&&today.day===d;
     let visible=dayPosts;
     if(state.filterClientId)visible=visible.filter(p=>p.clientId===state.filterClientId);
     if(state.filterContentType)visible=visible.filter(p=>p.contentType===state.filterContentType||getCT(p.contentType)?.id===state.filterContentType);
@@ -2376,37 +2428,58 @@ let currentAppTab = 'calendar';
 // TAREFAS -- quadro simples de 2 colunas (Pendentes / Concluidas),
 // no mesmo padrao visual e de dados do resto do app.
 // ================================================================
-const TASK_PRIORITIES = {
-  alta:   {label:'Alta',   color:'#ff4d4d'},
-  normal: {label:'Normal', color:'#ffa502'},
-  baixa:  {label:'Baixa',  color:'#2ed573'},
-};
+// Funcoes (nao objetos fixos) para que os rotulos sempre reflitam o idioma
+// atual, mesmo se a pessoa trocar de idioma sem recarregar a pagina.
+function getTaskPriorities(){
+  return {
+    alta:   {label:t('tasks.priorityHigh'),   color:'#ff4d4d'},
+    normal: {label:t('tasks.priorityNormal'), color:'#ffa502'},
+    baixa:  {label:t('tasks.priorityLow'),    color:'#2ed573'},
+  };
+}
+function getTaskStatuses(){
+  return {
+    aberto:   {label:t('tasks.statusOpen'),     color:'#74b9ff', icon:'circle-dashed'},
+    producao: {label:t('tasks.statusInProgress'),color:'#ffa502', icon:'zap'},
+    concluida:{label:t('tasks.statusDone'),     color:'#2ed573', icon:'check-circle'},
+  };
+}
 
 function getTaskDueChip(task){
   if(!task.dueDate)return '';
-  const today=fmtDate(new Date());
+  const today=todayKey();
   const cls=task.dueDate<today?'due-overdue':task.dueDate===today?'due-today':'';
   const label=new Date(task.dueDate+'T12:00:00').toLocaleDateString(getLocale(),{day:'2-digit',month:'2-digit'});
   return `<span class="task-chip ${cls}">${renderIcon('calendar',10)} ${label}</span>`;
 }
 
 function renderTaskCard(task){
-  const pr=TASK_PRIORITIES[task.priority||'normal'];
+  const st=getTaskStatuses()[task.status||'aberto'];
+  const pr=getTaskPriorities()[task.priority||'normal'];
+  const cl=task.clientId?getC(task.clientId):null;
   const checklist=task.checklist||[];
   const doneCk=checklist.filter(c=>c.done).length;
-  const isDone=!!task.done;
+  const isDone=task.status==='concluida';
+  const owners=task.owners||[];
   return `<div class="task-card${isDone?' is-done':''}" data-tid="${task.id}">
     <div class="task-card-top">
-      <button type="button" class="task-check-btn${isDone?' checked':''}" data-tid="${task.id}" title="${t('tasks.markDone')}" aria-label="${t('tasks.markDone')}">
-        ${isDone?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>':''}
+      <button type="button" class="task-status-pill" data-tid="${task.id}" style="background:${st.color}20;color:${st.color}" title="${t('tasks.changeStatus')}">
+        ${renderIcon(st.icon,12)}
       </button>
       <div class="task-card-title">${esc(task.title)}</div>
     </div>
     <div class="task-card-meta">
+      ${cl?`<span class="task-chip"><span class="task-chip-dot" style="background:${cl.color}"></span>${esc(cl.name)}</span>`:''}
       ${!isDone?`<span class="task-chip priority-${task.priority||'normal'}">${renderIcon('flag',10)} ${esc(pr.label)}</span>`:''}
       ${!isDone?getTaskDueChip(task):''}
       ${checklist.length?`<span class="task-chip">${renderIcon('check-circle',10)} ${doneCk}/${checklist.length}</span>`:''}
     </div>
+    ${owners.length?`<div class="task-card-owners">${owners.slice(0,4).map(o=>{
+      const name=ownerName(o);
+      const initials=name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+      const hue=Math.abs(name.split('').reduce((a,c)=>a+c.charCodeAt(0),0))%360;
+      return `<div class="task-owner-avatar" style="background:hsl(${hue},60%,50%)" title="${esc(name)}">${initials}</div>`;
+    }).join('')}</div>`:''}
   </div>`;
 }
 
@@ -2433,38 +2506,38 @@ function renderTasks(){
   if(emptyState)emptyState.style.display='none';
 
   const all=getFilteredTasks();
-  const pending=all.filter(t=>!t.done).sort((a,b)=>{
-    // Vencidas e proximas primeiro, depois por data de criacao
+  const byStatus=id=>all.filter(t=>(t.status||'aberto')===id);
+  const sortFn=(a,b)=>{
     if(a.dueDate&&b.dueDate)return a.dueDate.localeCompare(b.dueDate);
     if(a.dueDate)return -1;
     if(b.dueDate)return 1;
     return (a.createdAt||0)-(b.createdAt||0);
-  });
-  const done=all.filter(t=>t.done).sort((a,b)=>(b.completedAt||0)-(a.completedAt||0));
+  };
 
-  const showDone=taskState.showDone;
   const cols=[
-    {id:'pending',label:t('tasks.colPending'),color:'#74b9ff',items:pending},
+    {id:'aberto',   items:byStatus('aberto').sort(sortFn)},
+    {id:'producao', items:byStatus('producao').sort(sortFn)},
   ];
-  if(showDone)cols.push({id:'done',label:t('tasks.colDone'),color:'#2ed573',items:done});
+  if(taskState.showDone)cols.push({id:'concluida', items:byStatus('concluida').sort((a,b)=>(b.completedAt||0)-(a.completedAt||0))});
 
-  board.innerHTML=cols.map(col=>`
-    <div class="task-col" data-col="${col.id}">
-      <div class="task-col-hdr" style="border-top:3px solid ${col.color}">
-        <span class="task-col-dot" style="background:${col.color}"></span>
-        <span class="task-col-title">${esc(col.label)}</span>
+  board.innerHTML=cols.map(col=>{
+    const meta=getTaskStatuses()[col.id];
+    return `<div class="task-col" data-col="${col.id}">
+      <div class="task-col-hdr" style="border-top:3px solid ${meta.color}">
+        <span class="task-col-dot" style="background:${meta.color}"></span>
+        <span class="task-col-title">${esc(meta.label)}</span>
         <span class="task-col-count">${col.items.length}</span>
       </div>
       <div class="task-col-body">
-        ${col.items.length?col.items.map(renderTaskCard).join(''):`<div class="task-col-empty">${renderIcon(col.id==='done'?'check-circle':'circle-dashed',24)}<span>${t('tasks.colEmpty')}</span></div>`}
+        ${col.items.length?col.items.map(renderTaskCard).join(''):`<div class="task-col-empty">${renderIcon(col.id==='concluida'?'check-circle':'circle-dashed',24)}<span>${t('tasks.colEmpty')}</span></div>`}
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 
-  board.querySelectorAll('.task-check-btn').forEach(btn=>{
+  board.querySelectorAll('.task-status-pill').forEach(btn=>{
     btn.addEventListener('click',e=>{
       e.stopPropagation();
-      toggleTaskDone(btn.dataset.tid);
+      openTaskStatusPicker(btn);
     });
   });
   board.querySelectorAll('.task-card').forEach(card=>{
@@ -2474,24 +2547,55 @@ function renderTasks(){
   updateTaskTabBadge();
 }
 
-async function toggleTaskDone(taskId){
+// ---- Trocar status direto pelo card (popup NOOMA, sem abrir o modal) ----
+function openTaskStatusPicker(anchorBtn){
+  document.querySelector('.task-status-picker-popup')?.remove();
+  const taskId=anchorBtn.dataset.tid;
   const task=taskState.tasks.find(t=>t.id===taskId);
   if(!task)return;
-  task.done=!task.done;
-  task.completedAt=task.done?Date.now():null;
-  task.updatedAt=Date.now();
-  renderTasks();
-  try{await saveTask(task);}catch(e){toast(t('toast.error',{msg:e.message}));}
+
+  const popup=document.createElement('div');
+  popup.className='post-pill-dd-popup task-status-picker-popup';
+  popup.innerHTML=Object.entries(getTaskStatuses()).map(([id,s])=>
+    `<button type="button" class="post-pill-dd-opt${id===(task.status||'aberto')?' sel':''}" data-status="${id}">${renderIcon(s.icon,14)}<span>${esc(s.label)}</span></button>`
+  ).join('');
+  document.body.appendChild(popup);
+  const rect=anchorBtn.getBoundingClientRect();
+  popup.style.position='fixed';
+  popup.style.left=Math.min(rect.left,window.innerWidth-200-10)+'px';
+  popup.style.top=Math.min(rect.bottom+6,window.innerHeight-150)+'px';
+  requestAnimationFrame(()=>popup.classList.add('open'));
+
+  popup.querySelectorAll('.post-pill-dd-opt').forEach(opt=>{
+    opt.addEventListener('click',async()=>{
+      const newStatus=opt.dataset.status;
+      popup.remove();
+      task.status=newStatus;
+      task.completedAt=newStatus==='concluida'?Date.now():null;
+      task.updatedAt=Date.now();
+      renderTasks();
+      try{await saveTask(task);}catch(e){toast(t('toast.error',{msg:e.message}));}
+    });
+  });
+  setTimeout(()=>{
+    document.addEventListener('click',function handler(ev){
+      if(!popup.contains(ev.target)&&ev.target!==anchorBtn){
+        popup.remove();
+        document.removeEventListener('click',handler);
+      }
+    });
+  },50);
 }
 
+// ---- Modal (criar/editar) ----
 // ---- Modal (criar/editar) ----
 function renderTaskPriorityDd(){
   const lbl=document.getElementById('taskPriorityLabel');
   const menu=document.getElementById('taskPriorityMenu');
   if(!lbl||!menu)return;
-  const cur=TASK_PRIORITIES[taskState._selPriority]||TASK_PRIORITIES.normal;
+  const cur=getTaskPriorities()[taskState._selPriority]||TASK_PRIORITIES.normal;
   lbl.innerHTML=`${renderIcon('flag',13)} ${esc(cur.label)}`;
-  menu.innerHTML=Object.entries(TASK_PRIORITIES).map(([id,p])=>
+  menu.innerHTML=Object.entries(getTaskPriorities()).map(([id,p])=>
     `<div class="nsel-opt${id===taskState._selPriority?' sel':''}" data-pv="${id}"><span class="nsel-opt-dot" style="background:${p.color}"></span>${esc(p.label)}</div>`
   ).join('');
   menu.querySelectorAll('.nsel-opt').forEach(opt=>{
@@ -2508,6 +2612,95 @@ document.getElementById('taskPriorityBtn')?.addEventListener('click',e=>{
 });
 document.addEventListener('click',e=>{
   if(!e.target.closest('#taskPriorityWrap'))document.getElementById('taskPriorityMenu')?.classList.remove('open');
+});
+
+function renderTaskStatusDd(){
+  const lbl=document.getElementById('taskStatusLabel');
+  const menu=document.getElementById('taskStatusMenu');
+  if(!lbl||!menu)return;
+  const cur=getTaskStatuses()[taskState._selStatus]||TASK_STATUSES.aberto;
+  lbl.innerHTML=`${renderIcon(cur.icon,13)} ${esc(cur.label)}`;
+  menu.innerHTML=Object.entries(getTaskStatuses()).map(([id,s])=>
+    `<div class="nsel-opt${id===taskState._selStatus?' sel':''}" data-sv="${id}">${renderIcon(s.icon,13)} ${esc(s.label)}</div>`
+  ).join('');
+  menu.querySelectorAll('.nsel-opt').forEach(opt=>{
+    opt.addEventListener('click',()=>{
+      taskState._selStatus=opt.dataset.sv;
+      renderTaskStatusDd();
+      document.getElementById('taskStatusMenu')?.classList.remove('open');
+    });
+  });
+}
+document.getElementById('taskStatusBtn')?.addEventListener('click',e=>{
+  e.stopPropagation();
+  document.getElementById('taskStatusMenu')?.classList.toggle('open');
+});
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#taskStatusWrap'))document.getElementById('taskStatusMenu')?.classList.remove('open');
+});
+
+function renderTaskClientDd(){
+  const lbl=document.getElementById('taskClientLabel');
+  const menu=document.getElementById('taskClientMenu');
+  if(!lbl||!menu)return;
+  const cur=taskState._selClientId?getC(taskState._selClientId):null;
+  lbl.innerHTML=cur?`<span class="nsel-opt-dot" style="background:${cur.color}"></span>${esc(cur.name)}`:t('tasks.personalNoClient');
+  const clientOpts=state.clients.map(c=>
+    `<div class="nsel-opt${c.id===taskState._selClientId?' sel':''}" data-cv="${c.id}"><span class="nsel-opt-dot" style="background:${c.color}"></span>${esc(c.name)}</div>`
+  ).join('');
+  menu.innerHTML=`<div class="nsel-opt${!taskState._selClientId?' sel':''}" data-cv="">${renderIcon('user',13)} ${t('tasks.personalNoClient')}</div>${clientOpts}`;
+  menu.querySelectorAll('.nsel-opt').forEach(opt=>{
+    opt.addEventListener('click',()=>{
+      taskState._selClientId=opt.dataset.cv||null;
+      renderTaskClientDd();
+      document.getElementById('taskClientMenu')?.classList.remove('open');
+    });
+  });
+}
+document.getElementById('taskClientBtn')?.addEventListener('click',e=>{
+  e.stopPropagation();
+  document.getElementById('taskClientMenu')?.classList.toggle('open');
+});
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#taskClientWrap'))document.getElementById('taskClientMenu')?.classList.remove('open');
+});
+
+// ---- Responsaveis (so aparece dentro de um Workspace) ----
+function renderTaskOwners(){
+  const wrap=document.getElementById('taskOwnersWrap');if(!wrap)return;
+  if(!taskState.editOwners.length){
+    wrap.innerHTML=`<div style="font-size:11px;color:var(--dim);padding:2px 0">${t('pm.noOwners')}</div>`;
+    return;
+  }
+  wrap.innerHTML=taskState.editOwners.map((owner,i)=>{
+    const name=ownerName(owner),uid=ownerUid(owner);
+    const initials=name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const hue=Math.abs(name.split('').reduce((a,c)=>a+c.charCodeAt(0),0))%360;
+    return`<div class="proj-owner-chip${uid?' linked':''}" title="${uid?t('pm.workspaceMember'):t('pm.customOwner')}">
+      <div class="proj-owner-chip-avatar" style="background:hsl(${hue},60%,50%)">${initials}</div>
+      <span>${esc(name)}</span>
+      ${uid?`<span class="proj-owner-chip-badge">${renderIcon('briefcase',10)}</span>`:''}
+      <button class="proj-owner-chip-del" data-oi="${i}">\u2715</button>
+    </div>`;
+  }).join('');
+  wrap.querySelectorAll('.proj-owner-chip-del').forEach(btn=>{
+    btn.addEventListener('click',()=>{taskState.editOwners.splice(+btn.dataset.oi,1);renderTaskOwners();});
+  });
+}
+document.getElementById('btnAddTaskOwner')?.addEventListener('click',()=>{
+  const inp=document.getElementById('taskOwnerInput');
+  const name=inp?.value.trim();if(!name)return;
+  const newOwner={name,uid:null};
+  if(!taskState.editOwners.some(o=>ownerEquals(o,newOwner)))taskState.editOwners.push(newOwner);
+  inp.value='';
+  renderTaskOwners();
+});
+document.getElementById('taskOwnerInput')?.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){e.preventDefault();document.getElementById('btnAddTaskOwner')?.click();}
+});
+document.getElementById('btnPickTaskOwnerMember')?.addEventListener('click',e=>{
+  e.stopPropagation();
+  openOwnerMemberPicker(e.currentTarget,taskState.editOwners,renderTaskOwners);
 });
 
 function renderTaskChecklistEdit(){
@@ -2552,13 +2745,25 @@ function openTaskModal(taskId){
   const task=taskId?taskState.tasks.find(t=>t.id===taskId):null;
   taskState.editingId=taskId||null;
   taskState.editChecklist=task?.checklist?[...task.checklist]:[];
+  taskState.editOwners=(task?.owners?[...task.owners]:[]).map(o=>typeof o==='string'?{name:o,uid:null}:o);
   taskState._selPriority=task?.priority||'normal';
+  taskState._selStatus=task?.status||'aberto';
+  taskState._selClientId=task?.clientId||null;
 
   document.getElementById('taskTitleInput').value=task?.title||'';
   document.getElementById('taskDesc').value=task?.desc||'';
   document.getElementById('taskDueDate').value=task?.dueDate||'';
   document.getElementById('btnDeleteTask').style.display=task?'inline-flex':'none';
+
+  // Responsaveis so fazem sentido dentro de um Workspace (fora dele nao ha
+  // ninguem alem de voce mesmo para atribuir a tarefa).
+  const ownersField=document.getElementById('taskOwnersField');
+  if(ownersField)ownersField.style.display=state.currentWorkspace?'block':'none';
+
   renderTaskPriorityDd();
+  renderTaskStatusDd();
+  renderTaskClientDd();
+  renderTaskOwners();
   renderTaskChecklistEdit();
 
   document.getElementById('taskModalOverlay')?.classList.add('open');
@@ -2572,20 +2777,40 @@ document.getElementById('btnCloseTaskModal')?.addEventListener('click',closeTask
 document.getElementById('btnCancelTask')?.addEventListener('click',closeTaskModal);
 document.getElementById('taskModalOverlay')?.addEventListener('click',e=>{if(e.target===e.currentTarget)closeTaskModal();});
 
+async function notifyTaskAssignment(toUid,task){
+  if(!db||!state.currentWorkspace||!toUid)return;
+  try{
+    const ref=doc(collection(db,'workspaces',state.currentWorkspace.id,'notifications'));
+    await setDoc(ref,{
+      forUid:toUid,
+      type:'task_assigned',
+      taskId:task.id,
+      taskTitle:task.title,
+      fromUid:currentUser.uid,
+      fromName:currentUser.displayName||currentUser.email||'',
+      createdAt:Date.now(),
+      read:false,
+    });
+  }catch(e){console.error('Erro ao notificar responsavel da tarefa:',e);}
+}
+
 document.getElementById('btnSaveTask')?.addEventListener('click',async()=>{
   const title=document.getElementById('taskTitleInput').value.trim();
   if(!title){toast(t('tasks.enterTitle'));return;}
 
   const existing=taskState.editingId?taskState.tasks.find(t=>t.id===taskState.editingId):null;
+  const newStatus=taskState._selStatus||'aberto';
   const task={
     id: taskState.editingId||uid(),
     title,
     desc: document.getElementById('taskDesc').value.trim(),
     priority: taskState._selPriority||'normal',
+    status: newStatus,
+    clientId: taskState._selClientId||null,
+    owners: [...taskState.editOwners],
     dueDate: document.getElementById('taskDueDate').value||null,
     checklist: taskState.editChecklist,
-    done: existing?.done||false,
-    completedAt: existing?.completedAt||null,
+    completedAt: newStatus==='concluida'?(existing?.completedAt||Date.now()):null,
     createdAt: existing?.createdAt||Date.now(),
     updatedAt: Date.now(),
   };
@@ -2595,6 +2820,12 @@ document.getElementById('btnSaveTask')?.addEventListener('click',async()=>{
   btn.innerHTML=`<span class="ld"></span> ${t('tasks.saving')}`;btn.disabled=true;
   try{
     await saveTask(task);
+    // Notificar membros do workspace recem-atribuidos como responsaveis
+    if(state.currentWorkspace){
+      const oldOwnerUids=new Set((existing?.owners||[]).map(o=>ownerUid(o)).filter(Boolean));
+      const newlyAssigned=task.owners.filter(o=>{const u=ownerUid(o);return u&&!oldOwnerUids.has(u)&&u!==currentUser.uid;});
+      newlyAssigned.forEach(o=>notifyTaskAssignment(o.uid,task));
+    }
     closeTaskModal();
     toast(taskState.editingId?t('tasks.updated'):t('tasks.created'));
   }catch(e){
@@ -2692,7 +2923,7 @@ function renderTasksIfActive(){
 function updateTaskTabBadge(){
   const badge = document.getElementById('taskTabBadge');
   if(!badge)return;
-  const pending = taskState.tasks.filter(t=>!t.done).length;
+  const pending = taskState.tasks.filter(t=>(t.status||'aberto')!=='concluida').length;
   if(pending>0){badge.textContent=pending;badge.style.display='inline-flex';}
   else badge.style.display='none';
 }
@@ -2702,7 +2933,9 @@ function updateTaskTabBadge(){
 // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 function getDaysUntilDeadline(proj){
   if(!proj.deadline)return null;
-  const diff = Math.ceil((new Date(proj.deadline+'T23:59:59') - new Date()) / 86400000);
+  // Comparacao por string de data (Brasilia) em vez de Date() do dispositivo,
+  // pra dar o mesmo resultado pra qualquer pessoa, em qualquer fuso horario.
+  const diff = Math.round((new Date(proj.deadline+'T12:00:00') - new Date(todayKey()+'T12:00:00')) / 86400000);
   return diff;
 }
 function getUrgencyLevel(proj){
@@ -4308,7 +4541,12 @@ document.getElementById('btnAddOwner')?.addEventListener('click',()=>{
 });
 
 // ---- Escolher responsavel dentre os membros do workspace ----
-function openOwnerMemberPicker(anchorEl){
+function openOwnerMemberPicker(anchorEl,targetList,onUpdate){
+  // targetList/onUpdate sao opcionais -- por padrao continua operando sobre
+  // o formulario de Projetos, mas outras telas (como Tarefas) podem passar
+  // sua propria lista e funcao de re-render, reaproveitando todo o resto.
+  targetList=targetList||projState.editOwners;
+  onUpdate=onUpdate||renderProjOwners;
   const ws=state.currentWorkspace;
   if(!ws||!ws.members||!Object.keys(ws.members).length){
     toast(t('pm.noWorkspaceMembers'));
@@ -4335,8 +4573,8 @@ function openOwnerMemberPicker(anchorEl){
   popup.querySelectorAll('.owner-picker-item').forEach(btn=>{
     btn.addEventListener('click',()=>{
       const newOwner={name:btn.dataset.name,uid:btn.dataset.uid};
-      if(!projState.editOwners.some(o=>ownerEquals(o,newOwner)))projState.editOwners.push(newOwner);
-      renderProjOwners();
+      if(!targetList.some(o=>ownerEquals(o,newOwner)))targetList.push(newOwner);
+      onUpdate();
       popup.remove();
     });
   });

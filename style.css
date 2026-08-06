@@ -1250,10 +1250,6 @@
     .task-card:hover{border-color:var(--border-h);transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,0,0,0.25)}
     .task-card.is-done{opacity:0.55}
     .task-card-top{display:flex;align-items:flex-start;gap:9px}
-    .task-check-btn{width:19px;height:19px;border-radius:6px;border:2px solid var(--border-h);background:transparent;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:var(--trans);margin-top:1px}
-    .task-check-btn:hover{border-color:var(--accent)}
-    .task-check-btn.checked{background:var(--accent);border-color:var(--accent);color:var(--accent-text)}
-    .task-check-btn svg{width:12px;height:12px}
     .task-card-title{flex:1;font-size:13px;font-weight:700;line-height:1.4;word-break:break-word}
     .task-card.is-done .task-card-title{text-decoration:line-through;color:var(--muted)}
     .task-card-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding-left:28px}
@@ -1263,6 +1259,16 @@
     .task-chip.priority-baixa{background:rgba(46,213,115,0.14);color:#2ed573}
     .task-chip.due-overdue{background:rgba(255,77,77,0.14);color:#ff4d4d}
     .task-chip.due-today{background:rgba(255,165,2,0.14);color:#ffa502}
+    .task-chip-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+    /* Pill de status clicavel no card (substitui o antigo checkbox simples,
+       agora que sao 3 estagios em vez de so feito/nao-feito) */
+    .task-status-pill{width:22px;height:22px;border-radius:7px;border:none;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:var(--trans);margin-top:1px}
+    .task-status-pill:hover{filter:brightness(1.2)}
+
+    /* Avatares dos responsaveis no rodape do card */
+    .task-card-owners{display:flex;padding-left:28px;margin-top:-2px}
+    .task-owner-avatar{width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:#fff;border:2px solid var(--bg2);margin-right:-6px}
 
     .task-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:40px 20px;text-align:center}
     .task-empty-icon{color:var(--dim)}
